@@ -1,5 +1,9 @@
 # deepfakes_classification
 
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/22872200/75561975-de8dee00-5a6d-11ea-8131-cab5cc736993.png">
+</p>
+
 ## Celeb-DF
 Classifying deepfakes in High resolution videos.
 
@@ -17,7 +21,15 @@ Frames contains a lot of noise and we have to focus on face. We used facenet mod
 
 TSNE plot before and after training:
 
-![celeb_df_tsne](https://user-images.githubusercontent.com/22872200/74857763-29bb4900-536a-11ea-8562-61ded44123c1.png)
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/22872200/74857763-29bb4900-536a-11ea-8562-61ded44123c1.png">
+</p>
+
+Grad CAM Activation maps:
+
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/22872200/75562309-5d832680-5a6e-11ea-8d80-cf7e4eb327cf.png">
+</p>
 
 ## FaceForensics++
 
@@ -27,6 +39,8 @@ FaceForensics++ dataset contains four types of forgeries:
 * Deepfakes
 * Neural Texture
 
-It contains 1000 manipulated videos 
+It contains 1000 manipulated videos of each type and 1000 real videos on which these 4 manipulations have been done. 
 
-
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/22872200/75562036-f4031800-5a6d-11ea-9a2a-c34d693b0fca.png">
+</p>
