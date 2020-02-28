@@ -1,20 +1,32 @@
 # deepfakes_classification
-Classifying deepfakes in HIgh resolution videos.
+
+## Celeb-DF
+Classifying deepfakes in High resolution videos.
 
 Working on Celeb-DF dataset and XceptionNet using Imagenet weights.
 
-In videos, with 5299/712 training distribution and 340/178 videos in testing distribution, with frame rate there are approximately, 70,000 frames ca be generated. 
+In videos, with 5299/712 training distribution and 340/178 videos in testing distribution as real/fake videos. With frame rate 5, there are approximately 70K frames generated. 
 
-4 scenarios with ImageNet: 
-1) Loading ImageNet weights. Finetuning only final fc layers.
-2) Loading ImageNet weights. Training whole network.
-3) Loading No weights.
-4) Loading Random initialization.
+2 scenarios with ImageNet: 
+1) Loading ImageNet weights. Finetuning only final fc layers. (2-3M params)
+2) Loading ImageNet weights. Training whole network. (22M params)
 
-In the last two scenarios,  a very large number of epochs would be required to optimize it perfectly. 
+Although Celeb-DF face quality is better than FaceForensics++ c-40 videos, training directly on whole frames is not useful. Data imbalance plays a huge role that affects the weights of network. So, the dataset was divided into 7chunks of 1400 videos approximately: 700 fake and 700 real.
 
-Now, if we do finetune by adding final few layers, let's say we have 2 to 3 million parameters and 70,000 images. It will overfit the model and also since thre's a huge data imbalance, direct training will not help network learn the tampering on the image faces.
+Frames contains a lot of noise and we have to focus on face. We used facenet model to extract faces from the whole video (can be done directly using videos or after extraction of frames), and then we trained XceptionNet for 50 epochs with EarlyStopping (patience=10) and ModelCheckpoint to save only the best mdoel by tracking the val_loss. We achieve the accuracy of 96% and after applying max voting the accuracy got boosted to 98%.
 
-Although Celeb-DF face quality is better than FaceForensics++ c-40 videos, training directly via frames is not useful.
+TSNE plot before and after training:
 
-Then, we used facenet model to extract faces from the whole video (can be done directly using videos or after extraction of frames), and then we trained XceptionNet for 50 epochs with EarlyStopping (patience=10) and ModelCheckpoint to save only the best mdoel by tracking the val_loss.
+![celeb_df_tsne](https://user-images.githubusercontent.com/22872200/74857763-29bb4900-536a-11ea-8562-61ded44123c1.png)
+
+## FaceForensics++
+
+FaceForensics++ dataset contains four types of forgeries:
+* Face2Face
+* FaceSwap
+* Deepfakes
+* Neural Texture
+
+It contains 1000 manipulated videos 
+
+
