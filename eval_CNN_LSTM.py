@@ -1,4 +1,3 @@
-from keras.applications.inception_v3 import InceptionV3
 from keras.optimizers import SGD
 from keras.preprocessing.image import ImageDataGenerator
 from keras.models import Model
@@ -32,7 +31,35 @@ from PIL import Image
 import pandas as pd
 import cv2
 import math
-EPOCHS = 5
+from keras.preprocessing.image import ImageDataGenerator
+from keras.layers.pooling import AveragePooling2D, MaxPooling2D
+from keras.applications.resnet50 import ResNet50
+from keras.layers.core import Dropout, Flatten, Dense
+from keras.layers import Input, LSTM, Bidirectional, TimeDistributed
+from keras.models import Model
+from keras.optimizers import SGD, Adam, Nadam
+from keras.callbacks import LearningRateScheduler, ModelCheckpoint, EarlyStopping
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report
+from imutils import paths
+import matplotlib.pyplot as plt
+import pickle
+from keras import utils
+from keras.utils import np_utils, plot_model
+from keras.applications.inception_v3 import InceptionV3
+from keras.applications.inception_resnet_v2 import InceptionResNetV2
+from keras.applications.xception import Xception
+from random import shuffle
+from keras import backend as K
+from keras.utils.generic_utils import get_custom_objects
+from keras.layers import Activation, GRU
+import numpy as np
+import time
+from keras import backend as K
+from keras.engine import InputSpec
+from keras.engine.topology import Layer
+import numpy as np
+
 
 test_data = pd.read_csv('test_vids_label.csv')
 
@@ -50,35 +77,51 @@ mtcnn = MTCNN(margin=40, select_largest=False, post_process=False, device='cuda:
 testAug = ImageDataGenerator(rescale=1.0/255.0)
 
 
-def xception_model():
-	baseModel = Xception(weights="imagenet", include_top=False, input_shape=(160, 160, 3))
-	headModel = baseModel.output
-	headModel = MaxPooling2D(pool_size=(3, 3))(headModel)
-	headModel = Flatten(name="flatten")(headModel)
+# def xception_model():
+baseModel = Xception(weights="imagenet", include_top=False, input_shape=(160, 160, 3))
+headModel = baseModel.output
+headModel = MaxPooling2D(pool_size=(3, 3))(headModel)
+headModel = Flatten(name="flatten")(headModel)
+headModel = Dense(512, activation="relu", kernel_initializer='he_uniform')(headModel)
+headModel = Dense(512, activation="relu", kernel_initializer='he_uniform')(headModel)
+headModel = Dropout(0.5)(headModel)
+headModel = Dense(512, activation="relu", kernel_initializer='he_uniform')(headModel)
+headModel = Dropout(0.5)(headModel)
+predictions = Dense(2, activation="softmax", kernel_initializer='he_uniform')(headModel)
+model = Model(inputs=baseModel.input, outputs=predictions)
+
+for layer in baseModel.layers:
+	layer.trainable = True
+
+# opt = SGD(lr=1e-4, momentum=0.9, decay=1e-4 / EPOCHS)
+# opt = Adam(lr=3e-4)
+optimizer = Nadam(lr=0.002,
+              beta_1=0.9,
+              beta_2=0.999,
+              epsilon=1e-08,
+              schedule_decay=0.004)
+model.compile(loss="categorical_crossentropy", optimizer=optimizer, metrics=["accuracy"])
+	# return model
+
+
+def lstm_model():
+	main_input = Input(shape=(25, 2048), name="main_input")
+	headModel = Bidirectional(GRU(512))(main_input)
+	headModel = Dropout(0.2)(headModel)
 	headModel = Dense(512, activation="relu", kernel_initializer='he_uniform')(headModel)
-	headModel = Dense(512, activation="relu", kernel_initializer='he_uniform')(headModel)
-	headModel = Dropout(0.5)(headModel)
-	headModel = Dense(512, activation="relu", kernel_initializer='he_uniform')(headModel)
-	headModel = Dropout(0.5)(headModel)
 	predictions = Dense(2, activation="softmax", kernel_initializer='he_uniform')(headModel)
-	model = Model(inputs=baseModel.input, outputs=predictions)
-
-	for layer in baseModel.layers:
-		layer.trainable = True
-
-	# opt = SGD(lr=1e-4, momentum=0.9, decay=1e-4 / EPOCHS)
-	# opt = Adam(lr=3e-4)
-	optimizer = Nadam(lr=0.002,
-                  beta_1=0.9,
-                  beta_2=0.999,
-                  epsilon=1e-08,
-                  schedule_decay=0.004)
-	model.compile(loss="categorical_crossentropy", optimizer=optimizer, metrics=["accuracy"])
+	model = Model(inputs=main_input, outputs=predictions)
 	return model
 
-model = xception_model()
+# model = xception_model()
+
 
 model.load_weights("trained_wts/xception_50_160.hdf5")
+model_2 = Model(inputs=baseModel.input, outputs=baseModel.output)
+
+model_lstm = lstm_model()
+
+model_lstm.load_weights("xception_lstm.hdf5")
 
 print("Weights loaded...")
 
@@ -120,22 +163,24 @@ for i in videos:
 	batches /= 255
 	# print(batches.shape)
 
-	predictions = model.predict(batches)
-	# print(predictions)
+	predictions = model_2.predict(batches)
+	# print(predictions.shape)
+	predictions = np.reshape(predictions, (predictions.shape[0], 
+											predictions.shape[1]*predictions.shape[2],
+											predictions.shape[3]))
+	
+	preds = model_lstm.predict(predictions)
+	# print(preds)
+	
 	# Predict the output of each frame
 	# axis =1 along the row and axis=0 along the column
 	# print(predictions.argmax(1))
-	pred_mean = np.mean(predictions, axis=0)
+	pred_mean = np.mean(preds, axis=0)
+	# print(pred_mean)
 	# print(pred_mean)
 	y_probabs+=[pred_mean]
 	# print(y_probabs)
 	y_pred+=[pred_mean.argmax(0)]
-	# print(pred_mean)
-	# if pred_mean<0.5:
-	# 	y_pred+=[0]
-	# else:
-	# 	y_pred+=[1]
-
 	
 	cap.release()
 
@@ -145,10 +190,11 @@ for i in videos:
 
 # print(true_labels)
 # print(y_pred)
+# print(y_probabs)
 print("Accuracy Score:", accuracy_score(true_labels, y_pred))
 print("Precision Score", precision_score(true_labels, y_pred))
 print("Recall Score:", recall_score(true_labels, y_pred))
 print("F1 Score:", f1_score(true_labels, y_pred))
 
-np.save("Y_pred_c40_160.npy", y_pred)
-np.save("Y_probabs_c40_160.npy", y_probabs)
+np.save("lstm_preds.npy", y_pred)
+np.save("lstm_probabs.npy", y_probabs)
