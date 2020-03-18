@@ -1,12 +1,21 @@
 # deepfakes_classification
-
+This repository provides the official Python implementation of Deepfakes Detection with Metric Learning.
 <p align="center">
   <img src="https://user-images.githubusercontent.com/22872200/75561975-de8dee00-5a6d-11ea-8131-cab5cc736993.png">
 </p>
 
-## Celeb-DF
-Classifying deepfakes in High resolution videos.
+## Dependencies
 
+Tested on Python 3.6.x and Keras 2.3.0 with TF backend version 1.14.0.
+* Numpy (1.16.4)
+* OpenCV (4.1.0)
+* Pandas (0.25.3)
+* Scikit-learn (0.22.1)
+* facenet-pytorch (2.0.1)
+* PyTorch (1.2.0)
+
+## Celeb-DF
+It contains high resolution videos. 
 Working on Celeb-DF dataset and XceptionNet using Imagenet weights.
 
 In videos, with 5299/712 training distribution and 340/178 videos in testing distribution as real/fake videos. With frame rate 5, there are approximately 70K frames generated. 
@@ -44,3 +53,10 @@ It contains 1000 manipulated videos of each type and 1000 real videos on which t
 <p align="center">
   <img src="https://user-images.githubusercontent.com/22872200/75562036-f4031800-5a6d-11ea-9a2a-c34d693b0fca.png">
 </p>
+
+## Results
+
+## Citation
+If you find this work useful, please consider citing the following paper:
+
+
