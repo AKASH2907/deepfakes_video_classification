@@ -34,6 +34,10 @@ TSNE plot before and after training:
   <img src="https://user-images.githubusercontent.com/22872200/74857763-29bb4900-536a-11ea-8562-61ded44123c1.png">
 </p>
 
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/22872200/77095375-ce957880-6a33-11ea-9f4f-defd002326f6.png">
+</p>
+
 Grad CAM Activation maps:
 
 <p align="center">
