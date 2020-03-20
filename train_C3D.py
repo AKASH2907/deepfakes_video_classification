@@ -1,26 +1,20 @@
 from keras.layers import Activation
 from keras.regularizers import l2
 from keras.models import Model
-from keras.optimizers import SGD, Adam
+from keras.optimizers import SGD
 from keras.utils import np_utils
 from keras.layers.core import Dense, Dropout, Flatten
 from keras.layers.convolutional import Conv3D, MaxPooling3D, ZeroPadding3D
-from keras.optimizers import SGD
 from keras.layers import Input
 
 # from schedules import onetenth_4_8_12
 import numpy as np
-import random
 import cv2
 import os
 import random
-import matplotlib
-
-matplotlib.use("AGG")
 import matplotlib.pyplot as plt
-import glob
-from os.path import isfile, join, split
-from os import rename, listdir, rename, makedirs
+from os.path import join
+from os import listdir
 from random import shuffle
 
 
@@ -261,7 +255,7 @@ def process_batch(video_paths, train=True):
                 if is_flip == 1:
                     image = cv2.flip(image, 1)
                 batch[i][j][:][:][:] = image[
-                    crop_x : crop_x + 112, crop_y : crop_y + 112, :
+                    crop_x: crop_x + 112, crop_y: crop_y + 112, :
                 ]
             labels[i] = label
         else:
@@ -287,128 +281,57 @@ def preprocess(inputs):
 
 
 def generator_train_batch(train_vid_list, batch_size, num_classes):
-    # ff = open(train_txt, "r")
-    # video_paths = ff.readlines()
     num = len(train_vid_list)
     while True:
-        # new_line = []
-        # index = [n for n in range(num)]
-        # random.shuffle(index)
-        # for m in range(num):
-        #     new_line.append(video_paths[index[m]])
         for i in range(int(num / batch_size)):
             a = i * batch_size
             b = (i + 1) * batch_size
             x_train, x_labels = process_batch(train_vid_list[a:b], train=True)
             x = preprocess(x_train)
             y = np_utils.to_categorical(np.array(x_labels), num_classes)
-            # print(x.shape, y.shape)
-
             yield x, y
 
 
 def generator_val_batch(val_vid_list, batch_size, num_classes):
-    # f = open(val_txt, "r")
-    # video_paths = f.readlines()
     num = len(val_vid_list)
     while True:
-        # new_line = []
-        # index = [n for n in range(num)]
-        # random.shuffle(index)
-        # for m in range(num):
-        #     new_line.append(video_paths[index[m]])
         for i in range(int(num / batch_size)):
             a = i * batch_size
             b = (i + 1) * batch_size
             y_test, y_labels = process_batch(val_vid_list[a:b], train=False)
             x = preprocess(y_test)
             y = np_utils.to_categorical(np.array(y_labels), num_classes)
-            # print(x.shape, y.shape)
             yield x, y
 
 
 def main():
-    # train_file = "train_list.txt"
-    # test_file = "test_list.txt"
-
-    # f1 = open(train_file, "r")
-    # f2 = open(test_file, "r")
-    # video_paths = f1.readlines()
-    # f1.close()
-    # train_samples = len(video_paths)
-    # video_paths = f2.readlines()
-    # f2.close()
-    # val_samples = len(video_paths)
     train_path = ["train_faces_all/1", "train_faces_all/0"]
-    # files_name = ["I", "II", "III", "IV", "V", "VI", "VII"]
 
     list_1 = [join(train_path[0], x) for x in listdir(train_path[0])]
     list_0 = [join(train_path[1], x) for x in listdir(train_path[1])]
-    # print(len(list_0)//len(list_1))
 
-    c = 0
     for i in range(1):
         # for i in range(len(list_0)//len(list_1)):
-        vid_list = list_1 + list_0[i * (len(list_1)) : (i + 1) * (len(list_1))]
+        vid_list = list_1 + list_0[i * (len(list_1)): (i + 1) * (len(list_1))]
         print(len(vid_list))
         shuffle(vid_list)
 
         train_vid_list = vid_list[: int(0.8 * len(vid_list))]
-        val_vid_list = vid_list[int(0.8 * len(vid_list)) :]
-        print(len(train_vid_list), len(val_vid_list))
-        print(vid_list[:10])
-        # train_data = []
-        # train_label = []
+        val_vid_list = vid_list[int(0.8 * len(vid_list)):]
 
-        # count = 0
-
-        # images = []
-        # labels = []
-
-        # counter = 0
-
-        # for x in train_vid_list:
-        #     img = glob.glob(join(x, '*.jpg'))
-        #     img.sort(key=lambda f:int(''.join(filter(str.isdigit, f))))
-        #     images+=img[:5]
-        #     label = [k.split('/')[1] for k in img[:5]]
-        #     labels+=label
-
-        #     if counter%1000==0:
-        #         print("Number of files done:", counter)
-        #     counter+=1
-
-        # print("Training List making done")
-        # print(len(images), len(labels))
-        # print(images[:50])
-        # for j, k in zip(images, labels):
-
-        #     img = cv2.imread(j)
-        #     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        #     # img = cv2.resize(img, (75, 75), interpolation = cv2.INTER_AREA)
-        #     train_data.append(img)
-        #     train_label+=[k]
-
-        #     if count%10000==0:
-        #         print("Number of files done:", count)
-        #     count+=1
-
-        # train_data = np.array(train_data)
-        # train_label = np.array(train_label)
-        # train_label = np_utils.to_categorical(train_label)
-        # print(train_data.shape, train_label.shape)
-
-    # bre 
     num_classes = 2
     batch_size = 16
     epochs = 10
 
     model = c3d_model()
-    # print(model.summary())
     lr = 0.005
     sgd = SGD(lr=lr, momentum=0.9, nesterov=True)
-    model.compile(loss="categorical_crossentropy", optimizer=sgd, metrics=["accuracy"])
-    # model.summary()
+    model.compile(
+        loss="categorical_crossentropy",
+        optimizer=sgd,
+        metrics=["accuracy"]
+    )
+
     history = model.fit_generator(
         generator_train_batch(train_vid_list, batch_size, num_classes),
         steps_per_epoch=len(train_vid_list) // batch_size,
@@ -420,13 +343,10 @@ def main():
     )
     if not os.path.exists("results/"):
         os.mkdir("results/")
-    # plot_history(history, "results/")
-    # save_history(history, "results/")
+    plot_history(history, "results/")
+    save_history(history, "results/")
     model.save_weights("results/weights_c3d.h5")
 
 
 if __name__ == "__main__":
     main()
-
-
-# model =get_model(summary=True)

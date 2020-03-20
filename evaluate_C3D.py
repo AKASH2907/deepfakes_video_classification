@@ -1,37 +1,26 @@
 from keras.layers import Activation
 from keras.regularizers import l2
 from keras.models import Model
-from keras.optimizers import SGD, Adam
+from keras.optimizers import SGD
 from keras.utils import np_utils
 from keras.layers.core import Dense, Dropout, Flatten
-from keras.callbacks import LearningRateScheduler, ModelCheckpoint, EarlyStopping
 from keras.layers.convolutional import Conv3D, MaxPooling3D, ZeroPadding3D
-from keras.optimizers import SGD
 from keras.layers import Input
 
 # from schedules import onetenth_4_8_12
 import numpy as np
-import random
 import cv2
-import os
-import random
 import time
-import matplotlib
-
-matplotlib.use("AGG")
-import matplotlib.pyplot as plt
-import glob
-from os.path import isfile, join, split
-from os import rename, listdir, rename, makedirs
-from random import shuffle
-from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
-import warnings
+from sklearn.metrics import (
+    precision_score,
+    recall_score,
+    f1_score,
+    accuracy_score
+)
 import imageio.core.util
 from facenet_pytorch import MTCNN
 from PIL import Image
 import pandas as pd
-import cv2
-import math
 
 
 def ignore_warnings(*args, **kwargs):
@@ -41,7 +30,12 @@ def ignore_warnings(*args, **kwargs):
 imageio.core.util._precision_warn = ignore_warnings
 
 # Create face detector
-mtcnn = MTCNN(margin=40, select_largest=False, post_process=False, device="cuda:0")
+mtcnn = MTCNN(
+    margin=40,
+    select_largest=False,
+    post_process=False,
+    device="cuda:0"
+)
 
 
 def conv3d_model():
@@ -226,7 +220,7 @@ def process_batch(video_paths, num_frames=16):
         while cap.isOpened():
             frameId = cap.get(1)
             ret, frame = cap.read()
-            if ret!=True:
+            if not ret:
                 break
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             frame = Image.fromarray(frame)
@@ -238,21 +232,12 @@ def process_batch(video_paths, num_frames=16):
                 batches.append(face)
             except AttributeError:
                 print("Image Skipping")
-            if counter==31:
+            if counter == 31:
                 break
-            counter+=1
+            counter += 1
         cap.release()
-        # path = video_paths[i]
         label = video_paths[i].split("/")[1]
         label = int(label)
-        # imgs = os.listdir(path)
-        # imgs.sort(key=lambda f: int("".join(filter(str.isdigit, f))))
-        # for j in range(num_frames):
-        #     img = imgs[j]
-        #     image = cv2.imread(path + "/" + img)
-        #     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            # image = cv2.resize(image, (171, 128))
-            # batch[i][j][:][:][:] = image[8:120, 30:142, :]
         labels[i] = label
     return batch, labels
 
@@ -277,7 +262,6 @@ def generator_test_batch(test_vid_list, batch_size, num_classes):
             y_test, y_labels = process_batch(test_vid_list[a:b])
             x = preprocess(y_test)
             y = np_utils.to_categorical(np.array(y_labels), num_classes)
-            # print(x.shape, y.shape)
             yield x, y
 
 
@@ -286,13 +270,17 @@ def main():
     test_vids_list = test_data["vids_list"]
     test_vids_list = np.array(test_vids_list)
     true_labels = test_data["label"]
-    
+
     start = time.time()
 
     model = c3d_model()
     lr = 0.005
     sgd = SGD(lr=lr, momentum=0.9, nesterov=True)
-    model.compile(loss="categorical_crossentropy", optimizer=sgd, metrics=["accuracy"])
+    model.compile(
+        loss="categorical_crossentropy",
+        optimizer=sgd,
+        metrics=["accuracy"]
+    )
     model.load_weights("results/weights_c3d.h5")
     print("Weights loaded...")
 
@@ -301,7 +289,8 @@ def main():
     probabs = model.predict_generator(
         generator_test_batch(test_vids_list, batch_size, num_classes),
         steps=len(test_vids_list) // batch_size,
-        verbose=1)
+        verbose=1,
+    )
     np.save("C3D_probabs.npy", probabs)
     print(probabs)
     y_pred = probabs.argmax(1)
@@ -326,5 +315,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
