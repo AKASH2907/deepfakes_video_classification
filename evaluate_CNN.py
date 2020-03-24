@@ -92,8 +92,8 @@ def main():
     y_probabilities = []
     videos_done = 0
 
-    for i in videos:
-        cap = cv2.VideoCapture(i)
+    for video in videos:
+        cap = cv2.VideoCapture(video)
         batches = []
         frameRate = cap.get(5)  # frame rate
 

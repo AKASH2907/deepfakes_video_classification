@@ -1,5 +1,5 @@
 # deepfakes_classification
-This repository provides the official Python implementation of [Deepfakes Detection with Metric Learning](http://arxiv.org/abs/2003.08645) accepted at 8th International Workshop on Biometrics and Forensics.
+This repository provides the official Python implementation of [Deepfakes Detection with Metric Learning](http://arxiv.org/abs/2003.08645) accepted at 8th International Workshop on Biometrics and Forensics. Medium blog post is shared here: [Link](https://medium.com/@akash29/deepfakes-classification-via-metric-learning-89fa5179c920)
 
 <p align="center">
   <img src="https://user-images.githubusercontent.com/22872200/75561975-de8dee00-5a6d-11ea-8131-cab5cc736993.png">
