@@ -1,5 +1,5 @@
 # deepfakes_classification
-This repository provides the official Python implementation of [Deepfakes Detection with Metric Learning](http://arxiv.org/abs/2003.08645) accepted at 8th International Workshop on Biometrics and Forensics. Medium blog post is shared here: [Link](https://medium.com/@akash29/deepfakes-classification-via-metric-learning-89fa5179c920)
+This repository provides the official Python implementation of [Deepfakes Detection with Metric Learning](http://arxiv.org/abs/2003.08645) accepted at 8th International Workshop on Biometrics and Forensics. Medium blog post is shared here: [deepfakes-classification-via-metric-learning](https://medium.com/@akash29/deepfakes-classification-via-metric-learning-89fa5179c920)
 
 <p align="center">
   <img src="https://user-images.githubusercontent.com/22872200/75561975-de8dee00-5a6d-11ea-8131-cab5cc736993.png">
@@ -23,6 +23,25 @@ Tested on Python 3.6.x and Keras 2.3.0 with TF backend version 1.14.0.
 * Scikit-learn (0.22.1)
 * facenet-pytorch (2.0.1)
 * PyTorch (1.2.0)
+
+## Getting Started
+
+* Install the required dependencies:
+ ```javascript
+ pip install -r requirements.txt
+ ```
+* [frames_extraction.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/frames_extraction.py) - Extract frames from videos
+* [face_extraction.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/face_extraction.py) - Extract faces from frames/videos for training purpose
+* [train_data_prepare.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/train_data_prepare.py) - Selecting the first n frames per video and then saving it to numpy file for CNN training
+* [train_CNN.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/train_CNN.py) - Train on 2D CNN - XceptionNet model
+* [evaluate_CNN.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/evaluate_CNN.py) - Evaluate the testing video accuracy using CNN
+* [train_C3D.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/train_C3D.py) - Train on Convolutional 3D architecture
+* [evaluate_C3D.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/evaluate_C3D.py) - Evaluate videos using 3D CNN architecture
+* [feature_extractor.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/feature_extractor.py) - Extract features for recurrence networks
+* [train_CNN_LSTM.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/train_CNN_LSTM.py) - Train the LSTM/GRU (BiDirectional)/ Temporal models
+* [evaluate_CNN_LSTM.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/evaluate_CNN_LSTM.py) - Evaluate the recurrence models
+* [train_triplets_semi_hard.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/train_triplets_semi_hard.py) - Train the triplets of face embedding vectors and then train ML classifiers such as SGD, Random Forest, etc. to classify feature vectors
+* [evaluate_triplets.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/evaluate_triplets.py) - Evaluate the testing video embeddings uing trained ML classifiers
 
 ## Celeb-DF
 It contains high resolution videos, with 5299/712 training distribution and 340/178 videos in testing distribution as real/fake videos. With frame rate 5, there are approximately 70K frames generated. 
@@ -99,3 +118,5 @@ If you find this work useful, please consider citing the following paper:
 
 ## Notes
 I'm styling codes so that it's easy reproducible to all. If any errors you face in the repo, please raise a issue. (Any place where I should explain more) I'll be happy to resolve it as soon as possible.
+
+**Currently updating the repo**
