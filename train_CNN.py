@@ -7,23 +7,39 @@ from keras.callbacks import ModelCheckpoint, EarlyStopping
 from keras.callbacks import CSVLogger
 from sklearn.model_selection import train_test_split
 from keras.applications.xception import Xception
+from keras.applications.inception_v3 import InceptionV3
+from keras.applications.inception_resnet_v2 import InceptionResNetV2
+from keras.applications.resnet import ResNet50
 from matplotlib import pyplot as plt
 from keras import backend as K
 import numpy as np
 import time
+import argparse
 from os.path import exists
 from os import makedirs
 
-EPOCHS = 50
 
-
-def cnn_model():
+def cnn_model(model_name):
     """
     Model definition using Xception net architecture
     """
-    baseModel = Xception(
-        weights="imagenet", include_top=False, input_shape=(160, 160, 3)
-    )
+    if model_name == "xception":
+        baseModel = Xception(
+            weights="imagenet", include_top=False, input_shape=(160, 160, 3)
+        )
+    elif model_name == "iv3":
+        baseModel = InceptionV3(
+            weights="imagenet", include_top=False, input_shape=(160, 160, 3)
+        )
+    elif model_name == "irv2":
+        baseModel = InceptionResNetV2(
+            weights="imagenet", include_top=False, input_shape=(160, 160, 3)
+        )
+    elif model_name == "resnet":
+        baseModel = ResNet50(
+            weights="imagenet", include_top=False, input_shape=(160, 160, 3)
+        )
+
     headModel = baseModel.output
     headModel = MaxPooling2D(pool_size=(3, 3))(headModel)
     headModel = Flatten(name="flatten")(headModel)
@@ -62,6 +78,22 @@ def cnn_model():
 
 def main():
     start = time.time()
+
+    ap = argparse.ArgumentParser()
+    ap.add_argument(
+        "-e", "--epochs", required=True, type=int,
+        help="Number of epochs", default=25
+    )
+    ap.add_argument(
+        "-m", "--model_name", required=True, type=str,
+        help="Imagenet model to train", default="xception"
+    )
+    ap.add_argument(
+        "-b", "--batch_size", required=True, type=int,
+        help="Batch size", default=32
+    )
+    args = ap.parse_args()
+
     # Training dataset loading
     train_data = np.load("train_data.npy")
     train_label = np.load("train_label.npy")
@@ -88,7 +120,7 @@ def main():
 
     valAug = ImageDataGenerator(rescale=1.0 / 255.0)
 
-    model = cnn_model()
+    model = cnn_model(args.model_name)
 
     # Number of trainable and non-trainable parameters
     trainable_count = int(
@@ -126,22 +158,22 @@ def main():
 
     # Model Training
     H = model.fit_generator(
-        trainAug.flow(trainX, trainY, batch_size=32),
-        steps_per_epoch=len(trainX) // 32,
+        trainAug.flow(trainX, trainY, batch_size=args.batch_size),
+        steps_per_epoch=len(trainX) // args.batch_size,
         validation_data=valAug.flow(valX, valY),
-        validation_steps=len(valX) // 32,
-        epochs=EPOCHS,
+        validation_steps=len(valX) // args.batch_size,
+        epochs=args.epochs,
         callbacks=[model_checkpoint, stopping, csv_logger],
     )
 
     # plot the training loss and accuracy
     plt.style.use("ggplot")
     plt.figure()
-    N = EPOCHS
+    N = args.epochs
     plt.plot(np.arange(0, N), H.history["loss"], label="train_loss")
     plt.plot(np.arange(0, N), H.history["val_loss"], label="val_loss")
-    plt.plot(np.arange(0, N), H.history["acc"], label="train_acc")
-    plt.plot(np.arange(0, N), H.history["val_acc"], label="val_acc")
+    plt.plot(np.arange(0, N), H.history["accuracy"], label="train_acc")
+    plt.plot(np.arange(0, N), H.history["val_accuracy"], label="val_acc")
     plt.title("Training Loss and Accuracy on Santa/Not Santa")
     plt.xlabel("Epoch #")
     plt.ylabel("Loss/Accuracy")
