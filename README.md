@@ -33,11 +33,34 @@ Tested on Python 3.6.x and Keras 2.3.0 with TF backend version 1.14.0.
 * [frames_extraction.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/frames_extraction.py) - Extract frames from videos
 * [face_extraction.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/face_extraction.py) - Extract faces from frames/videos for training purpose
 * [train_data_prepare.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/train_data_prepare.py) - Selecting the first n frames per video and then saving it to numpy file for CNN training
+ ```javascript
+ python train_data_prepare.py -img_size 160 -fpv 25
+ 
+-  [-img_size] IMG_SIZE, Resize face image size
+-  [-fpv] FRAMES_PER_VIDEO, Number of frames per video to consider
+
+ ```
 * [train_CNN.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/train_CNN.py) - Train on 2D CNN - XceptionNet model
+ ```javascript
+ python train_CNN.py -e 20 -m xception -b 32
+ 
+-  [-e] EPOCHS, Number of epochs
+-  [-m] MODEL_NAME, Imagenet model to train
+-  [-b] BATCH_SIZE, Batch size
+ ```
 * [evaluate_CNN.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/evaluate_CNN.py) - Evaluate the testing video accuracy using CNN
 * [train_C3D.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/train_C3D.py) - Train on Convolutional 3D architecture
+ ```javascript
+ python train_C3D.py -e 15 -m c3d -b 32
+ 
+-  [-e] EPOCHS, Number of epochs
+-  [-m] MODEL_NAME, conv3d/ c3d model
+-  [-b] BATCH_SIZE, Batch size
+ ```
+ 
 * [evaluate_C3D.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/evaluate_C3D.py) - Evaluate videos using 3D CNN architecture
 * [feature_extractor.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/feature_extractor.py) - Extract features for recurrence networks
+
 * [train_CNN_LSTM.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/train_CNN_LSTM.py) - Train the LSTM/GRU (BiDirectional)/ Temporal models
 * [evaluate_CNN_LSTM.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/evaluate_CNN_LSTM.py) - Evaluate the recurrence models
 * [train_triplets_semi_hard.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/train_triplets_semi_hard.py) - Train the triplets of face embedding vectors and then train ML classifiers such as SGD, Random Forest, etc. to classify feature vectors
@@ -50,22 +73,20 @@ Although Celeb-DF face quality is better than FaceForensics++ c-40 videos, train
 
 Frames contains a lot of noise and we have to focus on face. We used facenet model to extract faces from the whole video (can be done directly using videos or after extraction of frames), and then we trained XceptionNet for 50 epochs with EarlyStopping (patience=10) and ModelCheckpoint to save only the best mdoel by tracking the val_loss. We achieve the accuracy of 96% and after boosting accuracy improves to 98%.
 
-A. TSNE plot before and after training using frames only (CNN):
-
 <p align="center">
   <img src="https://user-images.githubusercontent.com/22872200/74857763-29bb4900-536a-11ea-8562-61ded44123c1.png">
+  </br> <caption> TSNE plot before and after training using frames only (2D-CNN- Xception) </caption>
 </p>
-
-B. TSNE plot before and after training using Triplet Network:
 
 <p align="center">
-  <img src="https://user-images.githubusercontent.com/22872200/77095375-ce957880-6a33-11ea-9f4f-defd002326f6.png">
+  <img src="https://user-images.githubusercontent.com/22872200/80180961-887a9880-8621-11ea-8381-2579c11f323b.png">
+  </br><caption> TSNE plot before and after training using Triplet Network </caption>
 </p>
 
-Grad CAM Activation maps:
 
 <p align="center">
   <img src="https://user-images.githubusercontent.com/22872200/75562309-5d832680-5a6e-11ea-8d80-cf7e4eb327cf.png">
+  </br><caption> Grad CAM Activation maps </caption>
 </p>
 
 ## Face-forensics
@@ -79,7 +100,14 @@ FaceForensics++ dataset contains four types of forgeries:
 It contains 1000 manipulated videos of each type and 1000 real videos on which these 4 manipulations have been done. 
 
 <p align="center">
+  <img src="https://user-images.githubusercontent.com/22872200/80180728-05594280-8621-11ea-97f4-f7ff17482a5a.png">
+  </br><caption> Final Architecture </caption>
+</p>
+
+
+<p align="center">
   <img src="https://user-images.githubusercontent.com/22872200/75562036-f4031800-5a6d-11ea-9a2a-c34d693b0fca.png">
+  </br><caption> TSNE plot of FaceForensics++ dataset </caption>
 </p>
 
 ## Results
