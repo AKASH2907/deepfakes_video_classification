@@ -1,4 +1,6 @@
 # deepfakes_classification
+[![arXiv](https://img.shields.io/badge/arXiv-2003.08645-b31b1b.svg)](http://arxiv.org/abs/2003.08645)
+
 This repository provides the official Python implementation of [Deepfakes Detection with Metric Learning](http://arxiv.org/abs/2003.08645) accepted at 8th International Workshop on Biometrics and Forensics. Medium blog post is shared here: [deepfakes-classification-via-metric-learning](https://medium.com/@akash29/deepfakes-classification-via-metric-learning-89fa5179c920)
 
 <p align="center">
@@ -33,7 +35,7 @@ Tested on Python 3.6.x and Keras 2.3.0 with TF backend version 1.14.0.
 * [frames_extraction.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/frames_extraction.py) - Extract frames from videos
 * [face_extraction.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/face_extraction.py) - Extract faces from frames/videos for training purpose
 * [train_data_prepare.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/train_data_prepare.py) - Selecting the first n frames per video and then saving it to numpy file for CNN training
- ```javascript
+ ```python
  python train_data_prepare.py -img_size 160 -fpv 25
  
 -  [-img_size] IMG_SIZE, Resize face image size
@@ -41,7 +43,7 @@ Tested on Python 3.6.x and Keras 2.3.0 with TF backend version 1.14.0.
 
  ```
 * [train_CNN.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/train_CNN.py) - Train on 2D CNN - XceptionNet model
- ```javascript
+ ```python
  python train_CNN.py -e 20 -m xception -b 32
  
 -  [-e] EPOCHS, Number of epochs
@@ -50,7 +52,7 @@ Tested on Python 3.6.x and Keras 2.3.0 with TF backend version 1.14.0.
  ```
 * [evaluate_CNN.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/evaluate_CNN.py) - Evaluate the testing video accuracy using CNN
 * [train_C3D.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/train_C3D.py) - Train on Convolutional 3D architecture
- ```javascript
+ ```python
  python train_C3D.py -e 15 -m c3d -b 32
  
 -  [-e] EPOCHS, Number of epochs
@@ -136,7 +138,7 @@ It contains 1000 manipulated videos of each type and 1000 real videos on which t
 ## Citation
 If you find this work useful, please consider citing the following paper:
 
- ```javascript
+ ```
 @inproceedings{Kumar2020DetectingDW,
   title={Detecting Deepfakes with Metric Learning},
   author={Akash Kumar and Arnav Bhavsar},
@@ -145,6 +147,8 @@ If you find this work useful, please consider citing the following paper:
 ```
 
 ## Notes
+For FaceForensics++ and Celeb-DF dataset, contact the authors of the dataset. The dataset can't be shared with the third party. You need to accept the terms on their pages. Then, they will provide you with the access.
+
 I'm styling codes so that it's easy reproducible to all. If any errors you face in the repo, please raise a issue. (Any place where I should explain more) I'll be happy to resolve it as soon as possible.
 
 **Currently updating the repo**
