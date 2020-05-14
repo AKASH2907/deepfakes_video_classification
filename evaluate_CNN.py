@@ -95,29 +95,23 @@ def main():
     for video in videos:
         cap = cv2.VideoCapture(video)
         batches = []
-        frameRate = cap.get(5)  # frame rate
 
         # Number of frames taken into consideration for each video
-        mounting = 0
-
-        while cap.isOpened():
+        while (cap.isOpened() and len(batches)<25):
             frameId = cap.get(1)  # current frame number
             ret, frame = cap.read()
             if ret is not True:
                 break
 
-            if (frameId % math.floor(frameRate)) == 0 and \
-               frame.any() is not None:
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                frame = Image.fromarray(frame)
-                face = mtcnn(frame)
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame = Image.fromarray(frame)
+            face = mtcnn(frame)
 
-                try:
-                    face = face.permute(1, 2, 0).int().numpy()
-                    batches.append(face)
-                except AttributeError:
-                    print("Image Skipping")
-                mounting += 1
+            try:
+                face = face.permute(1, 2, 0).int().numpy()
+                batches.append(face)
+            except AttributeError:
+                print("Image Skipping")
 
         batches = np.asarray(batches).astype("float32")
         batches /= 255
