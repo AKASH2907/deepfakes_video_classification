@@ -12,6 +12,7 @@ import numpy as np
 import cv2
 import os
 import random
+import time
 import argparse
 import matplotlib.pyplot as plt
 from os.path import join
@@ -19,8 +20,8 @@ from os import listdir
 from random import shuffle
 
 
-def conv3d_model():
-    input_shape = (32, 112, 112, 3)
+def conv3d_model(batch_size):
+    input_shape = (batch_size, 112, 112, 3)
     weight_decay = 0.005
     nb_classes = 2
 
@@ -87,10 +88,10 @@ def conv3d_model():
     return model
 
 
-def c3d_model(summary=False):
+def c3d_model(batch_size):
     """ Return the Keras model of the network
     """
-    main_input = Input(shape=(32, 112, 112, 3), name="main_input")
+    main_input = Input(shape=(batch_size, 112, 112, 3), name="main_input")
     # 1st layer group
     x = Conv3D(
         64,
@@ -185,19 +186,17 @@ def c3d_model(summary=False):
     predictions = Dense(2, activation="softmax", name="fc8")(x)
 
     model = Model(inputs=main_input, outputs=predictions)
-    if summary:
-        print(model.summary())
     return model
 
 
 def plot_history(history, result_dir):
-    plt.plot(history.history["acc"], marker=".")
-    plt.plot(history.history["val_acc"], marker=".")
+    plt.plot(history.history["accuracy"], marker=".")
+    plt.plot(history.history["val_accuracy"], marker=".")
     plt.title("model accuracy")
     plt.xlabel("epoch")
     plt.ylabel("accuracy")
     plt.grid()
-    plt.legend(["acc", "val_acc"], loc="lower right")
+    plt.legend(["accuracy", "val_accuracy"], loc="lower right")
     plt.savefig(os.path.join(result_dir, "model_accuracy.png"))
     plt.close()
 
@@ -230,9 +229,9 @@ def save_history(history, result_dir):
         fp.close()
 
 
-def process_batch(video_paths, train=True):
+def process_batch(video_paths, batch_size, train=True):
     num = len(video_paths)
-    batch = np.zeros((num, 32, 112, 112, 3), dtype="float32")
+    batch = np.zeros((num, batch_size, 112, 112, 3), dtype="float32")
     labels = np.zeros(num, dtype="int")
     for i in range(num):
         # path = video_paths[i].split(" ")[0]
@@ -248,7 +247,8 @@ def process_batch(video_paths, train=True):
             crop_x = random.randint(0, 15)
             crop_y = random.randint(0, 58)
             is_flip = random.randint(0, 1)
-            for j in range(32):
+
+            for j in range(batch_size):
                 img = imgs[j]
                 image = cv2.imread(path + "/" + img)
                 image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -260,7 +260,7 @@ def process_batch(video_paths, train=True):
                 ]
             labels[i] = label
         else:
-            for j in range(32):
+            for j in range(batch_size):
                 img = imgs[j]
                 image = cv2.imread(path + "/" + img)
                 image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -287,7 +287,11 @@ def generator_train_batch(train_vid_list, batch_size, num_classes):
         for i in range(int(num / batch_size)):
             a = i * batch_size
             b = (i + 1) * batch_size
-            x_train, x_labels = process_batch(train_vid_list[a:b], train=True)
+            x_train, x_labels = process_batch(
+                train_vid_list[a:b],
+                batch_size,
+                train=True
+            )
             x = preprocess(x_train)
             y = np_utils.to_categorical(np.array(x_labels), num_classes)
             yield x, y
@@ -299,13 +303,17 @@ def generator_val_batch(val_vid_list, batch_size, num_classes):
         for i in range(int(num / batch_size)):
             a = i * batch_size
             b = (i + 1) * batch_size
-            y_test, y_labels = process_batch(val_vid_list[a:b], train=False)
+            y_test, y_labels = process_batch(
+                val_vid_list[a:b],
+                train=False
+            )
             x = preprocess(y_test)
             y = np_utils.to_categorical(np.array(y_labels), num_classes)
             yield x, y
 
 
 def main():
+    start = time.time()
 
     ap = argparse.ArgumentParser()
     ap.add_argument(
@@ -314,7 +322,7 @@ def main():
     )
     ap.add_argument(
         "-m", "--model_name", required=True, type=str,
-        help="Imagenet model to train", default="c3d_model"
+        help="Imagenet model to train", default="c3d"
     )
     ap.add_argument(
         "-w",
@@ -327,16 +335,10 @@ def main():
         "-b", "--batch_size", required=True, type=int,
         help="Batch size", default=32
     )
-    ap.add_argument(
-        "-im_size",
-        "--image_size",
-        required=True,
-        type=int,
-        help="Batch size",
-        default=224,
-    )
     args = ap.parse_args()
-    train_path = ["train_faces_all/1", "train_faces_all/0"]
+
+    # Video cropped faces train path
+    train_path = ["train_faces_c40/1", "train_faces_c40/0"]
 
     list_1 = [join(train_path[0], x) for x in listdir(train_path[0])]
     list_0 = [join(train_path[1], x) for x in listdir(train_path[1])]
@@ -347,6 +349,7 @@ def main():
         print(len(vid_list))
         shuffle(vid_list)
 
+        # Distrbution of training data as 80/20 according to FF++ paper
         train_vid_list = vid_list[: int(0.8 * len(vid_list))]
         val_vid_list = vid_list[int(0.8 * len(vid_list)):]
 
@@ -354,7 +357,12 @@ def main():
     batch_size = args.batch_size
     epochs = args.epochs
 
-    model = c3d_model()
+    # Model choice can be added more
+    if args.model_name == "c3d":
+        model = c3d_model(batch_size=args.batch_size)
+    else:
+        model = conv3d_model(batch_size=args.batch_size)
+
     lr = 0.005
     sgd = SGD(lr=lr, momentum=0.9, nesterov=True)
     model.compile(
@@ -363,20 +371,39 @@ def main():
         metrics=["accuracy"]
     )
 
+    # Model fitting
     history = model.fit_generator(
         generator_train_batch(train_vid_list, batch_size, num_classes),
         steps_per_epoch=len(train_vid_list) // batch_size,
         epochs=epochs,
         # callbacks=[onetenth_4_8_12(lr)],
-        validation_data=generator_val_batch(val_vid_list, batch_size, num_classes),
+        validation_data=generator_val_batch(
+            val_vid_list,
+            batch_size,
+            num_classes
+        ),
         validation_steps=len(val_vid_list) // batch_size,
         verbose=1,
     )
+
+    # Make results directory
     if not os.path.exists("results/"):
         os.mkdir("results/")
     plot_history(history, "results/")
     save_history(history, "results/")
-    model.save_weights("results/weights_c3d.h5")
+    model.save_weights("results/" + args.weights_save_name + ".hdf5")
+
+    end = time.time()
+    dur = end - start
+
+    if dur < 60:
+        print("Execution Time:", dur, "seconds")
+    elif dur > 60 and dur < 3600:
+        dur = dur / 60
+        print("Execution Time:", dur, "minutes")
+    else:
+        dur = dur / (60 * 60)
+        print("Execution Time:", dur, "hours")
 
 
 if __name__ == "__main__":

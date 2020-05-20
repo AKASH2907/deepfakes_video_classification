@@ -9,11 +9,10 @@ from keras.layers import GRU
 from keras import utils
 import numpy as np
 import time
+import argparse
 from keras.engine import InputSpec
 from keras.engine.topology import Layer
 from matplotlib import pyplot as plt
-
-EPOCHS = 50
 
 
 class TemporalMaxPooling(Layer):
@@ -80,7 +79,6 @@ def lstm_model(train_data):
     )
     # headModel = Bidirectional(LSTM(256, return_sequences=True))(main_input)
     headModel = LSTM(32)(main_input)
-    # headModel = Dropout(0.2)(headModel)
     # headModel = TemporalMaxPooling()(headModel)
     # headModel = TimeDistributed(Dense(512))(headModel)
     # # headModel = Bidirectional(LSTM(512, dropout=0.2))(main_input)
@@ -93,7 +91,7 @@ def lstm_model(train_data):
     model = Model(inputs=main_input, outputs=predictions)
 
     # Model compilation
-    opt = SGD(lr=1e-4, momentum=0.9, decay=1e-4 / EPOCHS)
+    # opt = SGD(lr=1e-4, momentum=0.9, decay=1e-4 / EPOCHS)
     optimizer = Nadam(
         lr=0.002, beta_1=0.9, beta_2=0.999, epsilon=1e-08, schedule_decay=0.004
     )
@@ -110,9 +108,27 @@ def main():
 
     start = time.time()
 
+    ap = argparse.ArgumentParser()
+    ap.add_argument(
+        "-e", "--epochs", required=True, type=int,
+        help="Number of epochs", default=25
+    )
+    ap.add_argument(
+        "-w",
+        "--weights_save_name",
+        required=True,
+        type=str,
+        help="Model wieghts name"
+    )
+    ap.add_argument(
+        "-b", "--batch_size", required=True, type=int,
+        help="Batch size", default=32
+    )
+    args = ap.parse_args()
+
     # Training dataset loading
-    train_data = np.load("lstm_data.npy")
-    train_label = np.load("lstm_label.npy")
+    train_data = np.load("lstm_40f_data.npy")
+    train_label = np.load("lstm_40f_labels.npy")
     train_label = utils.to_categorical(train_label)
     print("Dataset Loaded...")
 
@@ -137,7 +153,7 @@ def main():
 
     # Keras backend
     model_checkpoint = ModelCheckpoint(
-        "trained_wts/xception_lstm.hdf5",
+        "trained_wts/" + args.weights_save_name + ".hdf5",
         monitor="val_loss",
         verbose=1,
         save_best_only=True,
@@ -153,8 +169,8 @@ def main():
         trainX,
         trainY,
         validation_data=(valX, valY),
-        batch_size=128,
-        epochs=EPOCHS,
+        batch_size=args.batch_size,
+        epochs=args.epochs,
         shuffle=True,
         callbacks=[model_checkpoint, stopping],
     )
@@ -162,12 +178,12 @@ def main():
     # plot the training loss and accuracy
     plt.style.use("ggplot")
     plt.figure()
-    N = EPOCHS
+    N = stopping.stopped_epoch + 1
     plt.plot(np.arange(0, N), H.history["loss"], label="train_loss")
     plt.plot(np.arange(0, N), H.history["val_loss"], label="val_loss")
-    plt.plot(np.arange(0, N), H.history["acc"], label="train_acc")
-    plt.plot(np.arange(0, N), H.history["val_acc"], label="val_acc")
-    plt.title("Training Loss and Accuracy on Santa/Not Santa")
+    plt.plot(np.arange(0, N), H.history["accuracy"], label="train_acc")
+    plt.plot(np.arange(0, N), H.history["val_accuracy"], label="val_acc")
+    plt.title("Training Loss and Accuracy")
     plt.xlabel("Epoch #")
     plt.ylabel("Loss/Accuracy")
     plt.legend(loc="lower left")

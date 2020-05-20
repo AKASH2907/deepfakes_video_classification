@@ -1,3 +1,9 @@
+import numpy as np
+import cv2
+import time
+import argparse
+import pandas as pd
+
 from keras.layers import Activation
 from keras.regularizers import l2
 from keras.models import Model
@@ -8,9 +14,6 @@ from keras.layers.convolutional import Conv3D, MaxPooling3D, ZeroPadding3D
 from keras.layers import Input
 
 # from schedules import onetenth_4_8_12
-import numpy as np
-import cv2
-import time
 from sklearn.metrics import (
     precision_score,
     recall_score,
@@ -20,7 +23,6 @@ from sklearn.metrics import (
 import imageio.core.util
 from facenet_pytorch import MTCNN
 from PIL import Image
-import pandas as pd
 
 
 def ignore_warnings(*args, **kwargs):
@@ -38,8 +40,8 @@ mtcnn = MTCNN(
 )
 
 
-def conv3d_model():
-    input_shape = (32, 112, 112, 3)
+def conv3d_model(batch_size):
+    input_shape = (batch_size, 112, 112, 3)
     weight_decay = 0.005
     nb_classes = 2
 
@@ -106,10 +108,10 @@ def conv3d_model():
     return model
 
 
-def c3d_model(summary=False):
+def c3d_model(batch_size):
     """ Return the Keras model of the network
     """
-    main_input = Input(shape=(32, 112, 112, 3), name="main_input")
+    main_input = Input(shape=(batch_size, 112, 112, 3), name="main_input")
     # 1st layer group
     x = Conv3D(
         64,
@@ -204,21 +206,18 @@ def c3d_model(summary=False):
     predictions = Dense(2, activation="softmax", name="fc8")(x)
 
     model = Model(inputs=main_input, outputs=predictions)
-    if summary:
-        print(model.summary())
     return model
 
 
-def process_batch(video_paths, num_frames=16):
+def process_batch(video_paths, batch_size, num_frames=16):
     num = len(video_paths)
-    batch = np.zeros((num, 32, 112, 112, 3), dtype="float32")
+    batch = np.zeros((num, batch_size, 112, 112, 3), dtype="float32")
     labels = np.zeros(num, dtype="int")
     for i in range(num):
         cap = cv2.VideoCapture(video_paths[i])
         batches = []
         counter = 0
         while cap.isOpened():
-            frameId = cap.get(1)
             ret, frame = cap.read()
             if not ret:
                 break
@@ -232,10 +231,11 @@ def process_batch(video_paths, num_frames=16):
                 batches.append(face)
             except AttributeError:
                 print("Image Skipping")
-            if counter == 31:
+            if counter == batch_size-1:
                 break
             counter += 1
         cap.release()
+        # path = video_paths[i]
         label = video_paths[i].split("/")[1]
         label = int(label)
         labels[i] = label
@@ -259,21 +259,44 @@ def generator_test_batch(test_vid_list, batch_size, num_classes):
         for i in range(int(num / batch_size)):
             a = i * batch_size
             b = (i + 1) * batch_size
-            y_test, y_labels = process_batch(test_vid_list[a:b])
+            y_test, y_labels = process_batch(test_vid_list[a:b], batch_size)
             x = preprocess(y_test)
             y = np_utils.to_categorical(np.array(y_labels), num_classes)
             yield x, y
 
 
 def main():
-    test_data = pd.read_csv("test_vids_label.csv")
+    test_data = pd.read_csv("test_vids_c40.csv")
     test_vids_list = test_data["vids_list"]
     test_vids_list = np.array(test_vids_list)
     true_labels = test_data["label"]
 
     start = time.time()
 
-    model = c3d_model()
+    ap = argparse.ArgumentParser()
+    ap.add_argument(
+        "-m", "--model_name", required=True, type=str,
+        help="Imagenet model to train", default="c3d"
+    )
+    ap.add_argument(
+        "-w",
+        "--load_weights_name",
+        required=True,
+        type=str,
+        help="Model wieghts name"
+    )
+    ap.add_argument(
+        "-b", "--batch_size", required=True, type=int,
+        help="Batch size", default=32
+    )
+    args = ap.parse_args()
+
+    # Model choice can be added more
+    if args.model_name == "c3d":
+        model = c3d_model(batch_size=args.batch_size)
+    else:
+        model = conv3d_model(batch_size=args.batch_size)
+
     lr = 0.005
     sgd = SGD(lr=lr, momentum=0.9, nesterov=True)
     model.compile(
@@ -285,14 +308,15 @@ def main():
     print("Weights loaded...")
 
     num_classes = 2
-    batch_size = 16
+    batch_size = args.batch_size
+
     probabs = model.predict_generator(
         generator_test_batch(test_vids_list, batch_size, num_classes),
         steps=len(test_vids_list) // batch_size,
-        verbose=1,
+        verbose=1
     )
     np.save("C3D_probabs.npy", probabs)
-    print(probabs)
+
     y_pred = probabs.argmax(1)
     np.save("C3D_preds.npy", y_pred)
 
@@ -300,6 +324,7 @@ def main():
     print("Precision Score", precision_score(true_labels, y_pred))
     print("Recall Score:", recall_score(true_labels, y_pred))
     print("F1 Score:", f1_score(true_labels, y_pred))
+
     end = time.time()
     dur = end - start
 

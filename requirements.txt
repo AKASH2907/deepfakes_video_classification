@@ -9,3 +9,4 @@ keras-facenet==0.1a5
 keras-vis==0.4.1
 pandas==0.25.3
 scikit-learn==0.22.1
+keras_efficientnets
