@@ -3,7 +3,7 @@ from os import makedirs
 from os.path import join, exists
 import glob
 
-training_videos_folder = ["train/0", "train/1"]
+training_videos_folder = ["../train/0", "../train/1"]
 
 for folder in training_videos_folder:
     videos_path = glob.glob(join(folder, "*.mp4"))
@@ -16,8 +16,8 @@ for folder in training_videos_folder:
         vid = vid.split(".")[0]
         frameRate = cap.get(5)  # frame rate
 
-        if not exists("train_frames/" + folder + "/video_" + str(int(counter))):
-            makedirs("train_frames/" + folder + "/video_" + str(int(counter)))
+        if not exists("../train_frames/" + folder + "/video_" + str(int(counter))):
+            makedirs("../train_frames/" + folder + "/video_" + str(int(counter)))
 
         while cap.isOpened():
             frameId = cap.get(1)  # current frame number
@@ -26,7 +26,7 @@ for folder in training_videos_folder:
                 break
 
             filename = (
-                "train_frames/"
+                "../train_frames/"
                 + folder
                 + "/video_"
                 + str(int(counter))

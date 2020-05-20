@@ -1,45 +1,91 @@
+import imageio.core.util
+from facenet_pytorch import MTCNN
+from PIL import Image
+import pandas as pd
+import cv2
+import time
+import argparse
+import numpy as np
 from keras.models import Model
-from keras.layers.pooling import MaxPooling2D
-from keras.layers.core import Dropout, Flatten, Dense
+from keras.layers.pooling import GlobalAveragePooling2D
+from keras.layers.core import Dropout, Dense
 from keras.optimizers import Nadam
 from keras.applications.xception import Xception
-import numpy as np
+from keras.applications.resnet50 import ResNet50
+from keras.applications.inception_v3 import InceptionV3
+from keras.applications.inception_resnet_v2 import InceptionResNetV2
+from keras.applications.nasnet import NASNetLarge
+from keras_efficientnets import EfficientNetB5, EfficientNetB0
 from sklearn.metrics import (
     precision_score,
     recall_score,
     f1_score,
     accuracy_score
 )
-import imageio.core.util
-from facenet_pytorch import MTCNN
-from PIL import Image
-import pandas as pd
-import cv2
-import math
-import time
 
 
 def ignore_warnings(*args, **kwargs):
     pass
 
 
-def cnn_model():
-    baseModel = Xception(
-        weights="imagenet", include_top=False, input_shape=(160, 160, 3)
-    )
+def cnn_model(model_name, img_size):
+    """
+    Model definition using Xception net architecture
+    """
+    input_size = (img_size, img_size, 3)
+    if model_name == "xception":
+        baseModel = Xception(
+            weights="imagenet",
+            include_top=False,
+            input_shape=(img_size, img_size, 3)
+        )
+    elif model_name == "iv3":
+        baseModel = InceptionV3(
+            weights="imagenet",
+            include_top=False,
+            input_shape=(img_size, img_size, 3)
+        )
+    elif model_name == "irv2":
+        baseModel = InceptionResNetV2(
+            weights="imagenet",
+            include_top=False,
+            input_shape=(img_size, img_size, 3)
+        )
+    elif model_name == "resnet":
+        baseModel = ResNet50(
+            weights="imagenet",
+            include_top=False,
+            input_shape=(img_size, img_size, 3)
+        )
+    elif model_name == "nasnet":
+        baseModel = NASNetLarge(
+            weights="imagenet",
+            include_top=False,
+            input_shape=(img_size, img_size, 3)
+        )
+    elif model_name == "ef0":
+        baseModel = EfficientNetB0(
+            input_size,
+            weights="imagenet",
+            include_top=False
+        )
+    elif model_name == "ef5":
+        baseModel = EfficientNetB5(
+            input_size,
+            weights="imagenet",
+            include_top=False
+        )
+
     headModel = baseModel.output
-    headModel = MaxPooling2D(pool_size=(3, 3))(headModel)
-    headModel = Flatten(name="flatten")(headModel)
+    headModel = GlobalAveragePooling2D()(headModel)
     headModel = Dense(512, activation="relu", kernel_initializer="he_uniform")(
         headModel
     )
-    headModel = Dense(512, activation="relu", kernel_initializer="he_uniform")(
-        headModel
-    )
-    headModel = Dropout(0.5)(headModel)
-    headModel = Dense(512, activation="relu", kernel_initializer="he_uniform")(
-        headModel
-    )
+    headModel = Dropout(0.4)(headModel)
+    # headModel = Dense(512, activation="relu", kernel_initializer="he_uniform")(
+    #     headModel
+    # )
+    # headModel = Dropout(0.5)(headModel)
     headModel = Dropout(0.5)(headModel)
     predictions = Dense(
         2,
@@ -66,6 +112,28 @@ def cnn_model():
 def main():
     start = time.time()
 
+    ap = argparse.ArgumentParser()
+    ap.add_argument(
+        "-m", "--model_name", required=True, type=str,
+        help="Imagenet model to train", default="xception"
+    )
+    ap.add_argument(
+        "-w",
+        "--load_weights_name",
+        required=True,
+        type=str,
+        help="Model wieghts name"
+    )
+    ap.add_argument(
+        "-im_size",
+        "--image_size",
+        required=True,
+        type=int,
+        help="Batch size",
+        default=224,
+    )
+    args = ap.parse_args()
+
     # Read video labels from csv file
     test_data = pd.read_csv("test_vids_label.csv")
 
@@ -84,8 +152,8 @@ def main():
     )
 
     # Loading model weights
-    model = cnn_model()
-    model.load_weights("trained_wts/xception_50_160.hdf5")
+    model = cnn_model(args.model_name, img_size=args.image_size)
+    model.load_weights("trained_wts/" + args.load_weights_name + ".hdf5")
     print("Weights loaded...")
 
     y_predictions = []
@@ -97,12 +165,12 @@ def main():
         batches = []
 
         # Number of frames taken into consideration for each video
-        while (cap.isOpened() and len(batches)<25):
-            frameId = cap.get(1)  # current frame number
+        while (cap.isOpened() and len(batches) < 25):
             ret, frame = cap.read()
             if ret is not True:
                 break
 
+            frame = cv2.resize(frame, (args.img_size, args.img_size))
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             frame = Image.fromarray(frame)
             face = mtcnn(frame)

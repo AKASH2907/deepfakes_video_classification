@@ -1,9 +1,11 @@
-import keras
-import matplotlib.pyplot as plt
+from keras.layers import GlobalAveragePooling2D
+from keras.layers.core import Dropout, Dense
 from keras.models import Model
-from keras.layers import Dense
-from keras.layers.pooling import MaxPooling2D
-from keras.layers.core import Dropout, Flatten
+import numpy as np
+import imageio.core.util
+from facenet_pytorch import MTCNN
+from PIL import Image
+import cv2
 from keras.optimizers import Nadam
 from keras.applications.xception import Xception
 from keras.applications.resnet50 import ResNet50
@@ -11,52 +13,18 @@ from keras.applications.inception_v3 import InceptionV3
 from keras.applications.inception_resnet_v2 import InceptionResNetV2
 from keras.applications.nasnet import NASNetLarge
 from keras_efficientnets import EfficientNetB5, EfficientNetB0
-from vis.utils import utils
-from vis.visualization import visualize_cam
-import numpy as np
-import imageio.core.util
-from facenet_pytorch import MTCNN
-from PIL import Image
-import pandas as pd
-import cv2
-
-test_data = pd.read_csv("test_vids_label.csv")
-
-videos = test_data["vids_list"]
-true_labels = test_data["label"]
-classlabel = true_labels
+from random import shuffle
+from os import listdir
+import glob
+from os.path import join
+import argparse
 
 
 def ignore_warnings(*args, **kwargs):
     pass
 
 
-imageio.core.util._precision_warn = ignore_warnings
-
-# Create face detector
-mtcnn = MTCNN(
-    margin=40,
-    select_largest=False,
-    post_process=False,
-    device="cuda:0"
-)
-
-
-def plot_map(grads, img, subtitle=None):
-    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-    axes[0].imshow(img)
-    axes[0].axis("off")
-    axes[1].imshow(img)
-    i = axes[1].imshow(grads, cmap="jet", alpha=0.3)
-    axes[1].axis("off")
-    fig.colorbar(i)
-    # plt.suptitle("Pr(class={}) = {:5.2f}".format(
-    #                   classlabel[class_idx],
-    #                   y_pred[0,class_idx]))
-    plt.savefig(subtitle)
-
-
-def cnn_model(model_name, img_size):
+def cnn_model(model_name, img_size, weights):
     """
     Model definition using Xception net architecture
     """
@@ -123,6 +91,13 @@ def cnn_model(model_name, img_size):
     )
     model = Model(inputs=baseModel.input, outputs=predictions)
 
+    model.load_weights("trained_wts/" + weights + ".hdf5")
+    print("Weights loaded...")
+    model_lstm = Model(
+        inputs=baseModel.input,
+        outputs=model.get_layer("fc1").output
+    )
+
     for layer in baseModel.layers:
         layer.trainable = True
 
@@ -134,37 +109,95 @@ def cnn_model(model_name, img_size):
         optimizer=optimizer,
         metrics=["accuracy"]
     )
-    return model
+    return model_lstm
 
 
 def main():
-    model = xception_model()
 
-    model.load_weights("trained_wts/xception_50_I.hdf5")
+    ap = argparse.ArgumentParser()
+    ap.add_argument(
+        "-seq",
+        "--seq_length",
+        required=True,
+        type=int,
+        help="Number of frames to be taken into consideration",
+    )
+    ap.add_argument(
+        "-m",
+        "--model_name",
+        required=True,
+        type=str,
+        help="Imagenet model to train",
+        default="xception",
+    )
+    ap.add_argument(
+        "-w",
+        "--load_weights_name",
+        required=True,
+        type=str,
+        help="Model wieghts name"
+    )
+    ap.add_argument(
+        "-im_size",
+        "--image_size",
+        required=True,
+        type=int,
+        help="Batch size",
+        default=224,
+    )
+    args = ap.parse_args()
 
-    print("Weights loaded...")
+    # MTCNN face extraction from frames
+    imageio.core.util._precision_warn = ignore_warnings
 
-    # Utility to search for layer index by name. Alternatively we can
-    # specify this as -1 since it corresponds to the last layer.
-    layer_idx = utils.find_layer_idx(model, "dense_4")
-    # Swap softmax with linear
-    model.layers[layer_idx].activation = keras.activations.linear
-    model = utils.apply_modifications(model)
+    # Create face detector
+    mtcnn = MTCNN(
+        margin=40,
+        select_largest=False,
+        post_process=False,
+        device="cuda:0"
+    )
 
-    penultimate_layer_idx = utils.find_layer_idx(model, "block14_sepconv2_act")
+    train_dir = "./train_c23/"
+    sub_directories = listdir(train_dir)
 
-    # block14_sepconv2_act
-    # dense_4
+    videos = []
 
+    for i in sub_directories:
+        videos += glob.glob(join(train_dir, i, "*.mp4"))
+
+    shuffle(videos)
+
+    # Loading model for feature extraction
+    model = cnn_model(
+        model_name=args.model_name,
+        img_size=args.image_size,
+        weights=args.load_weights_name
+    )
+
+    features = []
     counter = 0
-    for i in videos[:4]:
-        cap = cv2.VideoCapture(i)
+    labels = []
+
+    for video in videos:
+        cap = cv2.VideoCapture(video)
+        labels += [int(video.split("/")[-2])]
+
         batches = []
-        counter = 0
-        while cap.isOpened():
+
+        while cap.isOpened() and len(batches) < args.seq_length:
             ret, frame = cap.read()
             if not ret:
                 break
+
+            h, w, _ = frame.shape
+            if h >= 1080 and w >= 1920:
+                frame = cv2.resize(
+                    frame,
+                    (640, 480),
+                    interpolation=cv2.INTER_AREA
+                )
+
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             frame = Image.fromarray(frame)
             face = mtcnn(frame)
@@ -174,41 +207,28 @@ def main():
                 batches.append(face)
             except AttributeError:
                 print("Image Skipping")
-            if counter == 4:
-                break
-            counter += 1
-        batches = np.asarray(batches).astype("float32")
-        batches /= 255
-        print(batches.shape)
 
-        predictions = model.predict(batches)
-        pred_mean = np.mean(predictions, axis=0)
-        y_pred = pred_mean.argmax(0)
-
-        imgs = batches[0]
-        print(imgs.shape)
-        seed_input = imgs
-        class_idx = y_pred
-        grad_top1 = visualize_cam(
-            model,
-            layer_idx,
-            class_idx,
-            seed_input,
-            penultimate_layer_idx=penultimate_layer_idx,  # None,
-            backprop_modifier=None,
-            grad_modifier=None,
-        )
-
-        plot_map(
-            grad_top1,
-            img=seed_input,
-            subtitle="Class Activation maps" + str(counter)
-        )
-        print("Figure saved..")
         cap.release()
+        batches = np.array(batches).astype("float32")
+        batches /= 255
 
+        # fc layer feature generation
+        predictions = model.predict(batches)
+
+        features += [predictions]
+
+        if counter % 50 == 0:
+            print("Number of videos done:", counter)
         counter += 1
 
+    features = np.array(features)
+    labels = np.array(labels)
 
-if __name__ == '__main__':
+    print(features.shape, labels.shape)
+
+    np.save("lstm_40fpv_data.npy", features)
+    np.save("lstm_40fpv_labels.npy", labels)
+
+
+if __name__ == "__main__":
     main()

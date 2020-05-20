@@ -12,6 +12,7 @@ import numpy as np
 import cv2
 import os
 import random
+import argparse
 import matplotlib.pyplot as plt
 from os.path import join
 from os import listdir
@@ -305,6 +306,36 @@ def generator_val_batch(val_vid_list, batch_size, num_classes):
 
 
 def main():
+
+    ap = argparse.ArgumentParser()
+    ap.add_argument(
+        "-e", "--epochs", required=True, type=int,
+        help="Number of epochs", default=25
+    )
+    ap.add_argument(
+        "-m", "--model_name", required=True, type=str,
+        help="Imagenet model to train", default="c3d_model"
+    )
+    ap.add_argument(
+        "-w",
+        "--weights_save_name",
+        required=True,
+        type=str,
+        help="Model wieghts name"
+    )
+    ap.add_argument(
+        "-b", "--batch_size", required=True, type=int,
+        help="Batch size", default=32
+    )
+    ap.add_argument(
+        "-im_size",
+        "--image_size",
+        required=True,
+        type=int,
+        help="Batch size",
+        default=224,
+    )
+    args = ap.parse_args()
     train_path = ["train_faces_all/1", "train_faces_all/0"]
 
     list_1 = [join(train_path[0], x) for x in listdir(train_path[0])]
@@ -320,8 +351,8 @@ def main():
         val_vid_list = vid_list[int(0.8 * len(vid_list)):]
 
     num_classes = 2
-    batch_size = 16
-    epochs = 10
+    batch_size = args.batch_size
+    epochs = args.epochs
 
     model = c3d_model()
     lr = 0.005

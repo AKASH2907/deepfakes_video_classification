@@ -28,9 +28,9 @@ mtcnn = MTCNN(
 # device='cuda:0', image_size=256)
 
 # Directory containing images respective to each video
-source_frames_folders = ["./train_frames/0/"]
+source_frames_folders = ["../train_frames/0/"]
 # Destination location where faces cropped out from images will be saved
-dest_faces_folder = "./train_face/0/"
+dest_faces_folder = "../train_face/0/"
 
 
 for i in source_frames_folders:

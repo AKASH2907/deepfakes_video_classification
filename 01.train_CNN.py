@@ -1,15 +1,17 @@
 from keras.preprocessing.image import ImageDataGenerator
-from keras.layers.pooling import MaxPooling2D
-from keras.layers.core import Dropout, Flatten, Dense
+from keras.layers.pooling import GlobalAveragePooling2D
+from keras.layers.core import Dropout, Dense
 from keras.models import Model
 from keras.optimizers import Nadam
 from keras.callbacks import ModelCheckpoint, EarlyStopping
 from keras.callbacks import CSVLogger
 from sklearn.model_selection import train_test_split
 from keras.applications.xception import Xception
+from keras.applications.resnet50 import ResNet50
 from keras.applications.inception_v3 import InceptionV3
 from keras.applications.inception_resnet_v2 import InceptionResNetV2
-from keras.applications.resnet import ResNet50
+from keras.applications.nasnet import NASNetLarge
+from keras_efficientnets import EfficientNetB5, EfficientNetB0
 from matplotlib import pyplot as plt
 from keras import backend as K
 import numpy as np
@@ -19,40 +21,64 @@ from os.path import exists
 from os import makedirs
 
 
-def cnn_model(model_name):
+def cnn_model(model_name, img_size):
     """
     Model definition using Xception net architecture
     """
+    input_size = (img_size, img_size, 3)
     if model_name == "xception":
         baseModel = Xception(
-            weights="imagenet", include_top=False, input_shape=(160, 160, 3)
+            weights="imagenet",
+            include_top=False,
+            input_shape=(img_size, img_size, 3)
         )
     elif model_name == "iv3":
         baseModel = InceptionV3(
-            weights="imagenet", include_top=False, input_shape=(160, 160, 3)
+            weights="imagenet",
+            include_top=False,
+            input_shape=(img_size, img_size, 3)
         )
     elif model_name == "irv2":
         baseModel = InceptionResNetV2(
-            weights="imagenet", include_top=False, input_shape=(160, 160, 3)
+            weights="imagenet",
+            include_top=False,
+            input_shape=(img_size, img_size, 3)
         )
     elif model_name == "resnet":
         baseModel = ResNet50(
-            weights="imagenet", include_top=False, input_shape=(160, 160, 3)
+            weights="imagenet",
+            include_top=False,
+            input_shape=(img_size, img_size, 3)
+        )
+    elif model_name == "nasnet":
+        baseModel = NASNetLarge(
+            weights="imagenet",
+            include_top=False,
+            input_shape=(img_size, img_size, 3)
+        )
+    elif model_name == "ef0":
+        baseModel = EfficientNetB0(
+            input_size,
+            weights="imagenet",
+            include_top=False
+        )
+    elif model_name == "ef5":
+        baseModel = EfficientNetB5(
+            input_size,
+            weights="imagenet",
+            include_top=False
         )
 
     headModel = baseModel.output
-    headModel = MaxPooling2D(pool_size=(3, 3))(headModel)
-    headModel = Flatten(name="flatten")(headModel)
+    headModel = GlobalAveragePooling2D()(headModel)
     headModel = Dense(512, activation="relu", kernel_initializer="he_uniform")(
         headModel
     )
-    headModel = Dense(512, activation="relu", kernel_initializer="he_uniform")(
-        headModel
-    )
-    headModel = Dropout(0.5)(headModel)
-    headModel = Dense(512, activation="relu", kernel_initializer="he_uniform")(
-        headModel
-    )
+    headModel = Dropout(0.4)(headModel)
+    # headModel = Dense(512, activation="relu", kernel_initializer="he_uniform")(
+    #     headModel
+    # )
+    # headModel = Dropout(0.5)(headModel)
     headModel = Dropout(0.5)(headModel)
     predictions = Dense(
         2,
@@ -89,8 +115,23 @@ def main():
         help="Imagenet model to train", default="xception"
     )
     ap.add_argument(
+        "-w",
+        "--weights_save_name",
+        required=True,
+        type=str,
+        help="Model wieghts name"
+    )
+    ap.add_argument(
         "-b", "--batch_size", required=True, type=int,
         help="Batch size", default=32
+    )
+    ap.add_argument(
+        "-im_size",
+        "--image_size",
+        required=True,
+        type=int,
+        help="Batch size",
+        default=224,
     )
     args = ap.parse_args()
 
@@ -120,7 +161,7 @@ def main():
 
     valAug = ImageDataGenerator(rescale=1.0 / 255.0)
 
-    model = cnn_model(args.model_name)
+    model = cnn_model(args.model_name, img_size=args.image_size)
 
     # Number of trainable and non-trainable parameters
     trainable_count = int(
@@ -143,7 +184,7 @@ def main():
 
     # Keras backend
     model_checkpoint = ModelCheckpoint(
-        "trained_wts/xception_best.hdf5",
+        "trained_wts/" + args.weights_save_name + ".hdf5",
         monitor="val_loss",
         verbose=1,
         save_best_only=True,
@@ -151,8 +192,11 @@ def main():
     )
 
     stopping = EarlyStopping(monitor="val_loss", patience=10, verbose=0)
-    csv_logger = CSVLogger("training_logs/xception.log", separator=",",
-        append=True,)
+    csv_logger = CSVLogger(
+        "training_logs/xception.log",
+        separator=",",
+        append=True,
+    )
 
     print("Training is going to start in 3... 2... 1... ")
 
@@ -169,7 +213,7 @@ def main():
     # plot the training loss and accuracy
     plt.style.use("ggplot")
     plt.figure()
-    N = args.epochs
+    N = stopping.stopped_epoch + 1
     plt.plot(np.arange(0, N), H.history["loss"], label="train_loss")
     plt.plot(np.arange(0, N), H.history["val_loss"], label="val_loss")
     plt.plot(np.arange(0, N), H.history["accuracy"], label="train_acc")
