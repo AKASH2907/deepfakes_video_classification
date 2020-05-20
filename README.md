@@ -44,16 +44,26 @@ Tested on Python 3.6.x and Keras 2.3.0 with TF backend version 1.14.0.
  ```
 * [train_CNN.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/train_CNN.py) - Train on 2D CNN - XceptionNet model
  ```python
- python train_CNN.py -e 20 -m xception -b 32
+ python train_CNN.py -e 20 -m xception -w xception_best -b 32 -im_size 160
  
 -  [-e] EPOCHS, Number of epochs
--  [-m] MODEL_NAME, Imagenet model to train
+-  [-m] MODEL_NAME, Imagenet architecture
+-  [-w] WEIGHTS_SAVE_NAME, Model weights name
 -  [-b] BATCH_SIZE, Batch size
+-  [-im_size] IMAGE_SIZE, Input image dimension
  ```
 * [evaluate_CNN.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/evaluate_CNN.py) - Evaluate the testing video accuracy using CNN
+
+```python
+python evaluate_CNN.py -m ef0 -w ef0.hdf5 -im_size 160
+
+- [-m] MODEL_NAME, Imagenet architecture, ef0=EfficientNet0
+- [-w] LOAD_WEIGHTS_NAME, Load saved weights
+- [-im_size] IMAGE_SIZE, Input image dimension
+```
 * [train_C3D.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/train_C3D.py) - Train on Convolutional 3D architecture
  ```python
- python train_C3D.py -e 15 -m c3d -b 32
+ python train_C3D.py -e 15 -m c3d  -b 32 -im_size 160
  
 -  [-e] EPOCHS, Number of epochs
 -  [-m] MODEL_NAME, conv3d/ c3d model
@@ -62,7 +72,14 @@ Tested on Python 3.6.x and Keras 2.3.0 with TF backend version 1.14.0.
  
 * [evaluate_C3D.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/evaluate_C3D.py) - Evaluate videos using 3D CNN architecture
 * [feature_extractor.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/feature_extractor.py) - Extract features for recurrence networks
+```python
+python lstm_features.py -seq 25 -m ef0 -w ef0 -im_size 160
 
+- [-seq] SEQ_LENGTH, Number of frames to consider per video
+- [-m] MODEL_NAME, Imagenet architecture, ef0=EfficientNet0
+- [-w] LOAD_WEIGHTS_NAME, Load saved weights
+- [-im_size] IMAGE_SIZE, Input image dimension 
+```
 * [train_CNN_LSTM.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/train_CNN_LSTM.py) - Train the LSTM/GRU (BiDirectional)/ Temporal models
 * [evaluate_CNN_LSTM.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/evaluate_CNN_LSTM.py) - Evaluate the recurrence models
 * [train_triplets_semi_hard.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/train_triplets_semi_hard.py) - Train the triplets of face embedding vectors and then train ML classifiers such as SGD, Random Forest, etc. to classify feature vectors
