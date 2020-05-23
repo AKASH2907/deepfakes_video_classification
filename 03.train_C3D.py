@@ -305,6 +305,7 @@ def generator_val_batch(val_vid_list, batch_size, num_classes):
             b = (i + 1) * batch_size
             y_test, y_labels = process_batch(
                 val_vid_list[a:b],
+                batch_size,
                 train=False
             )
             x = preprocess(y_test)
