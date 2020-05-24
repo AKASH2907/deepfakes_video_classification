@@ -74,7 +74,7 @@ def cnn_model(model_name, img_size, weights):
 
     headModel = baseModel.output
     headModel = GlobalAveragePooling2D()(headModel)
-    headModel = Dense(512, activation="relu", kernel_initializer="he_uniform")(
+    headModel = Dense(512, activation="relu", kernel_initializer="he_uniform", name="fc1")(
         headModel
     )
     headModel = Dropout(0.4)(headModel)
@@ -82,7 +82,6 @@ def cnn_model(model_name, img_size, weights):
     #     headModel
     # )
     # headModel = Dropout(0.5)(headModel)
-    headModel = Dropout(0.5)(headModel)
     predictions = Dense(
         2,
         activation="softmax",
