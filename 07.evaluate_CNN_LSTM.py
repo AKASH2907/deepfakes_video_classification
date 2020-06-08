@@ -1,61 +1,31 @@
-from keras.optimizers import SGD
-from keras.preprocessing.image import ImageDataGenerator
 from keras.models import Model
-from keras.layers import Dense, GlobalAveragePooling2D
-from keras.callbacks import ModelCheckpoint, TensorBoard, EarlyStopping
-import os.path
-from keras.preprocessing.image import ImageDataGenerator
-from keras.layers.pooling import AveragePooling2D, MaxPooling2D
+from keras.layers import Dense, GlobalAveragePooling2D, Input
 from keras.applications.resnet50 import ResNet50
-from keras.layers.core import Dropout, Flatten, Dense
-from keras.layers import Input
-from keras.models import Model
-from keras.optimizers import SGD, Adam, Nadam
-from keras.callbacks import LearningRateScheduler, ModelCheckpoint
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report
-from imutils import paths
-from keras import utils
+from keras.layers.core import Dropout
+from keras.optimizers import Nadam
 from keras.applications.inception_v3 import InceptionV3
 from keras.applications.inception_resnet_v2 import InceptionResNetV2
 from keras.applications.xception import Xception
+from keras.applications.nasnet import NASNetLarge
+from keras_efficientnets import EfficientNetB0, EfficientNetB5
 from keras import backend as K
-from keras.layers import Activation
 import numpy as np
-from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
-import warnings
+from sklearn.metrics import (
+    precision_score,
+    recall_score,
+    f1_score,
+    accuracy_score
+)
 import imageio.core.util
 from facenet_pytorch import MTCNN
 from PIL import Image
 import pandas as pd
 import cv2
-import math
-from keras.preprocessing.image import ImageDataGenerator
-from keras.layers.pooling import AveragePooling2D, MaxPooling2D
-from keras.applications.resnet50 import ResNet50
-from keras.layers.core import Dropout, Flatten, Dense
-from keras.layers import Input, LSTM, Bidirectional, TimeDistributed
-from keras.models import Model
-from keras.optimizers import SGD, Adam, Nadam
-from keras.callbacks import LearningRateScheduler, ModelCheckpoint, EarlyStopping
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report
-from imutils import paths
-import matplotlib.pyplot as plt
-import pickle
-from keras import utils
-from keras.utils import np_utils, plot_model
-from keras.applications.inception_v3 import InceptionV3
-from keras.applications.inception_resnet_v2 import InceptionResNetV2
-from keras.applications.xception import Xception
-from random import shuffle
-from keras import backend as K
-import numpy as np
+from keras.layers import LSTM, Bidirectional
 import time
-from keras import backend as K
 from keras.engine import InputSpec
 from keras.engine.topology import Layer
-import numpy as np
+import argparse
 
 
 def ignore_warnings(*args, **kwargs):
@@ -112,15 +82,14 @@ def cnn_model(model_name, img_size, weights):
 
     headModel = baseModel.output
     headModel = GlobalAveragePooling2D()(headModel)
-    headModel = Dense(512, activation="relu", kernel_initializer="he_uniform")(
+    headModel = Dense(
+        512,
+        activation="relu",
+        kernel_initializer="he_uniform",
+        name="fc1")(
         headModel
     )
     headModel = Dropout(0.4)(headModel)
-    # headModel = Dense(512, activation="relu", kernel_initializer="he_uniform")(
-    #     headModel
-    # )
-    # headModel = Dropout(0.5)(headModel)
-    headModel = Dropout(0.5)(headModel)
     predictions = Dense(
         2,
         activation="softmax",
@@ -129,7 +98,7 @@ def cnn_model(model_name, img_size, weights):
     )
     model = Model(inputs=baseModel.input, outputs=predictions)
 
-    model.load_weights("trained_wts/" + weights + ".hdf5")
+    model.load_weights(weights)
     print("Weights loaded...")
     model_lstm = Model(
         inputs=baseModel.input,
@@ -148,6 +117,40 @@ def cnn_model(model_name, img_size, weights):
         metrics=["accuracy"]
     )
     return model_lstm
+
+
+def lstm_model(shape):
+    # Model definition
+    main_input = Input(
+        shape=(shape[0],
+               shape[1]),
+        name="main_input"
+    )
+    # headModel = Bidirectional(LSTM(256, return_sequences=True))(main_input)
+    headModel = LSTM(32)(main_input)
+    # headModel = TemporalMaxPooling()(headModel)
+    # headModel = TimeDistributed(Dense(512))(headModel)
+    # # headModel = Bidirectional(LSTM(512, dropout=0.2))(main_input)
+    # headModel = LSTM(256)(headModel)
+    predictions = Dense(
+        2,
+        activation="softmax",
+        kernel_initializer="he_uniform"
+    )(headModel)
+    model = Model(inputs=main_input, outputs=predictions)
+
+    # Model compilation
+    # opt = SGD(lr=1e-4, momentum=0.9, decay=1e-4 / EPOCHS)
+    optimizer = Nadam(
+        lr=0.002, beta_1=0.9, beta_2=0.999, epsilon=1e-08, schedule_decay=0.004
+    )
+    model.compile(
+        loss="categorical_crossentropy",
+        optimizer=optimizer,
+        metrics=["accuracy"]
+    )
+
+    return model
 
 
 class TemporalMaxPooling(Layer):
@@ -205,42 +208,7 @@ class TemporalMaxPooling(Layer):
         return None
 
 
-def lstm_model(train_data):
-    # Model definition
-    main_input = Input(
-        shape=(train_data.shape[1],
-               train_data.shape[2]),
-        name="main_input"
-    )
-    # headModel = Bidirectional(LSTM(256, return_sequences=True))(main_input)
-    headModel = LSTM(32)(main_input)
-    # headModel = TemporalMaxPooling()(headModel)
-    # headModel = TimeDistributed(Dense(512))(headModel)
-    # # headModel = Bidirectional(LSTM(512, dropout=0.2))(main_input)
-    # headModel = LSTM(256)(headModel)
-    predictions = Dense(
-        2,
-        activation="softmax",
-        kernel_initializer="he_uniform"
-    )(headModel)
-    model = Model(inputs=main_input, outputs=predictions)
-
-    # Model compilation
-    # opt = SGD(lr=1e-4, momentum=0.9, decay=1e-4 / EPOCHS)
-    optimizer = Nadam(
-        lr=0.002, beta_1=0.9, beta_2=0.999, epsilon=1e-08, schedule_decay=0.004
-    )
-    model.compile(
-        loss="categorical_crossentropy",
-        optimizer=optimizer,
-        metrics=["accuracy"]
-    )
-
-    return model
-
-
 def main():
-	start = time.time()
 
     ap = argparse.ArgumentParser()
     ap.add_argument(
@@ -253,15 +221,14 @@ def main():
     ap.add_argument(
         "-m",
         "--model_name",
-        required=True,
         type=str,
-        help="Imagenet model to train",
+        help="Imagenet model to load",
         default="xception",
     )
     ap.add_argument(
         "-w",
         "--load_weights_name",
-        required=True,
+        # required=True,
         type=str,
         help="Model wieghts name"
     )
@@ -286,10 +253,10 @@ def main():
         device="cuda:0"
     )
 
-	test_data = pd.read_csv('test_vids_label.csv')
+    test_data = pd.read_csv('test_csv/test_vids_c23.csv')
 
-	videos = test_data["vids_list"]
-	true_labels = test_data["label"]
+    videos = test_data["vids_list"]
+    true_labels = test_data["label"]
 
     # Loading model for feature extraction
     model = cnn_model(
@@ -297,71 +264,66 @@ def main():
         img_size=args.image_size,
         weights=args.load_weights_name
     )
+    shape = (args.seq_lengths, 512)
+    model_lstm = lstm_model(shape)
 
-	model_lstm = lstm_model()
+    model_lstm.load_weights("trained_wts/ef0_lstm.hdf5")
 
-	model_lstm.load_weights("xception_lstm.hdf5")
+    print("Weights loaded...")
 
-	print("Weights loaded...")
+    y_pred = []
+    counter = 0
 
-	y_pred = []
-	y_probabs = []
-	c = 0
+    for video in videos:
+        cap = cv2.VideoCapture(video)
+        batches = []
 
-	for video in videos:
-		cap = cv2.VideoCapture(video)
-		batches = []
+        while cap.isOpened() and len(batches) < args.seq_length:
+            ret, frame = cap.read()
+            if not ret:
+                break
 
-		while cap.isOpened() and len(batches) < args.seq_length:
-			ret, frame = cap.read()
-			if not ret:
-				break
-			
             h, w, _ = frame.shape
-            if h >= 1080 and w >= 1920:
+            if h >= 720 and w >= 1080:
                 frame = cv2.resize(
                     frame,
                     (640, 480),
                     interpolation=cv2.INTER_AREA
                 )
 
-			frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-			frame = Image.fromarray(frame)
-			face = mtcnn(frame)
-			
-			try:
-				face = face.permute(1, 2, 0).int().numpy()
-				batches.append(face)
-			except AttributeError:
-				print("Image Skipping")
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame = Image.fromarray(frame)
+            face = mtcnn(frame)
 
-		batches = np.asarray(batches).astype('float32')
-		batches /= 255
+            try:
+                face = face.permute(1, 2, 0).int().numpy()
+                batches.append(face)
+            except AttributeError:
+                print("Image Skipping")
 
-		feature_vec = model_2.predict(batches)
-		
-		preds = model_lstm.predict(feature_vec)
-		
-		# Predict the output of each frame
-		# axis =1 along the row and axis=0 along the column
-		pred_mean = np.mean(preds, axis=0)
-		y_probabs+=[pred_mean]
-		y_pred+=[pred_mean.argmax(0)]
-		
-		cap.release()
+        batches = np.asarray(batches).astype('float32')
+        batches /= 255
 
-		if c%10==0:
-			print(c, "Done....")
-		c+=1
+        feature_vec = model.predict(batches)
 
-	print("Accuracy Score:", accuracy_score(true_labels, y_pred))
-	print("Precision Score", precision_score(true_labels, y_pred))
-	print("Recall Score:", recall_score(true_labels, y_pred))
-	print("F1 Score:", f1_score(true_labels, y_pred))
+        feature_vec = np.expand_dims(feature_vec, axis=0)
 
-	np.save("lstm_preds.npy", y_pred)
-	np.save("lstm_probabs.npy", y_probabs)
+        preds = model_lstm.predict(feature_vec)
+        y_pred += [preds[0].argmax(0)]
+
+        cap.release()
+
+        if counter % 10 == 0:
+            print(counter, "Done....")
+        counter += 1
+
+    print("Accuracy Score:", accuracy_score(true_labels, y_pred))
+    print("Precision Score", precision_score(true_labels, y_pred))
+    print("Recall Score:", recall_score(true_labels, y_pred))
+    print("F1 Score:", f1_score(true_labels, y_pred))
+
+    np.save("lstm_preds.npy", y_pred)
 
 
 if __name__ == '__main__':
-	main()
+    main()

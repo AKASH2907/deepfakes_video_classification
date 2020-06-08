@@ -157,7 +157,7 @@ def main():
         "--weights_save_name",
         required=True,
         type=str,
-        help="Model wieghts name"
+        help="Model weights name"
     )
     ap.add_argument(
         "-b", "--batch_size", required=True, type=int,
