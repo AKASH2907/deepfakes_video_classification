@@ -233,7 +233,7 @@ if __name__ == "__main__":
 	# in case this scriot is called from another file, let's make sure it doesn't start training the network...
 	embedding_size = 64
 	input_image_shape = (512, )
-	test_data = pd.read_csv('/home/intern_akash/wd/face_forensics/ff++/test_vids_label.csv')
+	test_data = pd.read_csv('ff++/test_vids_label.csv')
 
 	# embedder = FaceNet()
 
@@ -246,7 +246,7 @@ if __name__ == "__main__":
 	testing_embeddings = create_base_network(input_image_shape,
 											 embedding_size=embedding_size)
 
-	model = load_model("/home/intern_akash/wd/face_forensics/ff++/triplets/triplets_semi_hard.hdf5",
+	model = load_model("triplets/triplets_semi_hard.hdf5",
 		custom_objects={'triplet_loss_adapted_from_tf':triplet_loss_adapted_from_tf})
 
 	# Grabbing the weights from the trained network
@@ -259,10 +259,11 @@ if __name__ == "__main__":
 	y_predictions = []
 	y_probabilities = []
 	c= 0
+
 	# test_data = np.load("test_embs.npy")
 	test_label = np.load("test_labels.npy")
 	y_test_onehot = utils.to_categorical(test_label)
-	print(type(y_test_onehot))
+
 	index_0 = np.where(test_label==0)
 	index_1 = np.where(test_label==1)
 

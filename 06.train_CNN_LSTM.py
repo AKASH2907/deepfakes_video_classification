@@ -70,19 +70,24 @@ class TemporalMaxPooling(Layer):
         return None
 
 
-def lstm_model(train_data):
-    # Model definition
+def rnn_models(model_name, train_data):
     main_input = Input(
         shape=(train_data.shape[1],
                train_data.shape[2]),
         name="main_input"
-    )
-    # headModel = Bidirectional(LSTM(256, return_sequences=True))(main_input)
-    headModel = LSTM(32)(main_input)
-    # headModel = TemporalMaxPooling()(headModel)
-    # headModel = TimeDistributed(Dense(512))(headModel)
-    # # headModel = Bidirectional(LSTM(512, dropout=0.2))(main_input)
-    # headModel = LSTM(256)(headModel)
+    )   
+
+    if model_name == "lstm":
+        headModel = LSTM(32)(main_input)
+
+    elif model_name == "bidirectional":
+        headModel = Bidirectional(LSTM(256, return_sequences=True))(main_input)
+        headModel = LSTM(32)(headModel)
+
+    elif model_name == "temporal_max":
+        headModel = Bidirectional(LSTM(256, return_sequences=True))(main_input)
+        headModel = TemporalMaxPooling()(headModel)
+
     predictions = Dense(
         2,
         activation="softmax",
@@ -102,6 +107,40 @@ def lstm_model(train_data):
     )
 
     return model
+
+
+# def lstm_model(train_data):
+#     # Model definition
+#     main_input = Input(
+#         shape=(train_data.shape[1],
+#                train_data.shape[2]),
+#         name="main_input"
+#     )
+#     # headModel = Bidirectional(LSTM(256, return_sequences=True))(main_input)
+#     headModel = LSTM(32)(main_input)
+#     # headModel = TemporalMaxPooling()(headModel)
+#     # headModel = TimeDistributed(Dense(512))(headModel)
+#     # # headModel = Bidirectional(LSTM(512, dropout=0.2))(main_input)
+#     # headModel = LSTM(256)(headModel)
+#     predictions = Dense(
+#         2,
+#         activation="softmax",
+#         kernel_initializer="he_uniform"
+#     )(headModel)
+#     model = Model(inputs=main_input, outputs=predictions)
+
+#     # Model compilation
+#     # opt = SGD(lr=1e-4, momentum=0.9, decay=1e-4 / EPOCHS)
+#     optimizer = Nadam(
+#         lr=0.002, beta_1=0.9, beta_2=0.999, epsilon=1e-08, schedule_decay=0.004
+#     )
+#     model.compile(
+#         loss="categorical_crossentropy",
+#         optimizer=optimizer,
+#         metrics=["accuracy"]
+#     )
+
+#     return model
 
 
 def main():
