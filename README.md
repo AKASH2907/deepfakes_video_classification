@@ -194,14 +194,17 @@ It contains 1000 manipulated videos of each type and 1000 real videos on which t
 If you find this work useful, please consider citing the following paper:
 
  ```
-@inproceedings{Kumar2020DetectingDW,
-  title={Detecting Deepfakes with Metric Learning},
-  author={Akash Kumar and Arnav Bhavsar},
-  year={2020}
-}
+@INPROCEEDINGS{9107962,
+  author={A. {Kumar} and A. {Bhavsar} and R. {Verma}},
+  booktitle={2020 8th International Workshop on Biometrics and Forensics (IWBF)}, 
+  title={Detecting Deepfakes with Metric Learning}, 
+  year={2020},
+  volume={},
+  number={},
+  pages={1-6},}
 ```
 
 ## Notes
 For FaceForensics++ and Celeb-DF dataset, contact the authors of the dataset. The dataset can't be shared with the third party. You need to accept the terms on their pages. Then, they will provide you with the access.
 
-I'm styling codes so that it's easy reproducible to all. If any errors you face in the repo, please raise a issue. (Any place where I should explain more) I'll be happy to resolve it as soon as possible.
+Codes have been formatted in PEP-8 styling so that it's easy to read and reproducible to all. If any errors you face in the repo, please raise a issue. (Any place where I should explain more) I'll be happy to resolve it as soon as possible.
