@@ -42,7 +42,7 @@ Tested on Python 3.6.x and Keras 2.3.0 with TF backend version 1.14.0.
 -  [-fpv] FRAMES_PER_VIDEO, Number of frames per video to consider
 
  ```
-* [train_CNN.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/train_CNN.py) - Train on 2D CNN - XceptionNet model
+* [train_CNN.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/01.train_CNN.py) - Train on 2D CNN - XceptionNet model
  ```
  python 01.train_CNN.py -e 20 -m xception -w xception_best -b 32 -im_size 160
  
@@ -52,7 +52,7 @@ Tested on Python 3.6.x and Keras 2.3.0 with TF backend version 1.14.0.
 -  [-b] BATCH_SIZE, Batch size
 -  [-im_size] IMAGE_SIZE, Input image dimension
  ```
-* [evaluate_CNN.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/evaluate_CNN.py) - Evaluate the testing video accuracy using CNN
+* [evaluate_CNN.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/02.evaluate_CNN.py) - Evaluate the testing video accuracy using CNN
 
 ```
 python 02.evaluate_CNN.py -m ef0 -w ef0.hdf5 -im_size 160
@@ -61,7 +61,7 @@ python 02.evaluate_CNN.py -m ef0 -w ef0.hdf5 -im_size 160
 - [-w] LOAD_WEIGHTS_NAME, Load saved weights
 - [-im_size] IMAGE_SIZE, Input image dimension
 ```
-* [train_C3D.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/train_C3D.py) - Train on Convolutional 3D architecture
+* [train_C3D.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/03.train_C3D.py) - Train on Convolutional 3D architecture
  ```
  python 03.train_C3D.py -e 15 -m c3d -b 32 -im_size 160
  
@@ -71,7 +71,7 @@ python 02.evaluate_CNN.py -m ef0 -w ef0.hdf5 -im_size 160
 -  [-b] BATCH_SIZE, Batch size
  ```
  
-* [evaluate_C3D.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/evaluate_C3D.py) - Evaluate videos using 3D CNN architecture
+* [evaluate_C3D.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/04.evaluate_C3D.py) - Evaluate videos using 3D CNN architecture
 
 ```
 python 04.evaluate_C3D.py -m c3d -w trained_wts/weights_c3d.h5 -b 32
@@ -81,7 +81,7 @@ python 04.evaluate_C3D.py -m c3d -w trained_wts/weights_c3d.h5 -b 32
 - [-b] BATCH_SIZE, Batch size
 ```
 
-* [feature_extractor.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/feature_extractor.py) - Extract features for recurrence networks
+* [feature_extractor.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/05.lstm_features.py) - Extract features for recurrence networks
 ```
 python 05.lstm_features.py -seq 25 -m ef0 -w ef0 -im_size 160
 
@@ -91,7 +91,7 @@ python 05.lstm_features.py -seq 25 -m ef0 -w ef0 -im_size 160
 - [-im_size] IMAGE_SIZE, Input image dimension 
 ```
 
-* [train_CNN_LSTM.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/train_CNN_LSTM.py) - Train the LSTM/GRU (BiDirectional)/ Temporal models
+* [train_CNN_LSTM.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/06.train_CNN_LSTM.py) - Train the LSTM/GRU (BiDirectional)/ Temporal models
  ```
  python 06.train_CNN_LSTM.py -e 15 -b 32 -w lstm_wts
  
@@ -100,7 +100,7 @@ python 05.lstm_features.py -seq 25 -m ef0 -w ef0 -im_size 160
 -  [-b] BATCH_SIZE, Batch size
  ```
 
-* [evaluate_CNN_LSTM.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/evaluate_CNN_LSTM.py) - Evaluate the recurrence models
+* [evaluate_CNN_LSTM.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/07.evaluate_CNN_LSTM.py) - Evaluate the recurrence models
 ```
 python 07.evaluate_CNN_LSTM.py -seq 25 -m ef0 -w ef0 -im_size 160
 
@@ -110,10 +110,18 @@ python 07.evaluate_CNN_LSTM.py -seq 25 -m ef0 -w ef0 -im_size 160
 - [-im_size] IMAGE_SIZE, Input image dimension 
 ```
 
+* [facenet_embeddings.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/08.facenet_embeddings.py) - Generate face embedding vectors of each face
 
-* [train_triplets_semi_hard.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/train_triplets_semi_hard.py) - Train the triplets of face embedding vectors and then train ML classifiers such as SGD, Random Forest, etc. to classify feature vectors
+* [train_triplets_semi_hard.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/09.train_triplets_semi_hard.py) - Train the triplets of face embedding vectors and then train ML classifiers such as SGD, Random Forest, etc. to classify feature vectors
 
-* [evaluate_triplets.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/evaluate_triplets.py) - Evaluate the testing video embeddings uing trained ML classifiers
+```
+python 10.train_triplets_semi_hard.py -f True -e 20
+
+- [-f] TRAIN_FLAG, True-> Train else test
+- [-e] EPOCHS, Number of epochs
+```
+
+* [evaluate_triplets.py](https://github.com/AKASH2907/deepfakes_video_classification/blob/master/10.evaluate_triplets.py) - Evaluate the testing video embeddings uing trained ML classifiers
 
 ## Celeb-DF
 It contains high resolution videos, with 5299/712 training distribution and 340/178 videos in testing distribution as real/fake videos. With frame rate 5, there are approximately 70K frames generated. 
@@ -186,16 +194,17 @@ It contains 1000 manipulated videos of each type and 1000 real videos on which t
 If you find this work useful, please consider citing the following paper:
 
  ```
-@inproceedings{Kumar2020DetectingDW,
-  title={Detecting Deepfakes with Metric Learning},
-  author={Akash Kumar and Arnav Bhavsar},
-  year={2020}
-}
+@INPROCEEDINGS{9107962,
+  author={A. {Kumar} and A. {Bhavsar} and R. {Verma}},
+  booktitle={2020 8th International Workshop on Biometrics and Forensics (IWBF)}, 
+  title={Detecting Deepfakes with Metric Learning}, 
+  year={2020},
+  volume={},
+  number={},
+  pages={1-6},}
 ```
 
 ## Notes
 For FaceForensics++ and Celeb-DF dataset, contact the authors of the dataset. The dataset can't be shared with the third party. You need to accept the terms on their pages. Then, they will provide you with the access.
 
-I'm styling codes so that it's easy reproducible to all. If any errors you face in the repo, please raise a issue. (Any place where I should explain more) I'll be happy to resolve it as soon as possible.
-
-**Currently updating the repo**
+Codes have been formatted in PEP-8 styling so that it's easy to read and reproducible to all. If any errors you face in the repo, please raise a issue. (Any place where I should explain more) I'll be happy to resolve it as soon as possible.
