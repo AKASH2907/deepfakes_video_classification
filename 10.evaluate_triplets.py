@@ -267,7 +267,6 @@ if __name__ == "__main__":
 	for i in videos[:]:
 		cap = cv2.VideoCapture(i)
 		batches = []
-		frameRate = cap.get(1) #frame rate
 		mounting = 0
 		while(cap.isOpened() and mounting<25):
 			frameId = cap.get(1) #current frame number
@@ -287,11 +286,10 @@ if __name__ == "__main__":
 
 		batches = np.asarray(batches).astype('float32')
 		print(batches.shape)
-		test_data.append(batches)
 
 		embeddings = embedder.embeddings(batches)
 		x_test_after = testing_embeddings.predict(embeddings)
-		x_test = testing_embeddings.predict(x_test_after)
+		x_test = testing_embeddings.predict(embeddings)
 		
 		# print("Embeddings after training")
 		sgd = linear_model.SGDClassifier(max_iter=50, tol=None)
