@@ -288,7 +288,6 @@ if __name__ == "__main__":
 		print(batches.shape)
 
 		embeddings = embedder.embeddings(batches)
-		x_test_after = testing_embeddings.predict(embeddings)
 		x_test = testing_embeddings.predict(embeddings)
 		
 		# print("Embeddings after training")
