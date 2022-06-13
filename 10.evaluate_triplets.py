@@ -262,9 +262,8 @@ if __name__ == "__main__":
 
 	# test_data = np.load("test_embs.npy")
 	test_label = np.load("test_labels.npy")
-	y_test_onehot = utils.to_categorical(test_label)
 
-	for i in videos[:]:
+	for i in videos:
 		cap = cv2.VideoCapture(i)
 		batches = []
 		mounting = 0
@@ -299,11 +298,11 @@ if __name__ == "__main__":
 
 		pred_mean = np.mean(y_pred, axis=0)
 		probab_mean = np.mean(y_probabs, axis=0)
-		probab_mean = 1 - probab_mean
+		# probab_mean = 1 - probab_mean
 
 		y_probabilities +=[probab_mean]
 		# print(pred_mean)
-		if pred_mean>0.5:
+		if pred_mean<0.5:
 			y_predictions+=[0]
 		else:
 			y_predictions+=[1]
