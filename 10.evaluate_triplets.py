@@ -235,7 +235,7 @@ if __name__ == "__main__":
 	input_image_shape = (512, )
 	test_data = pd.read_csv('ff++/test_vids_label.csv')
 
-	# embedder = FaceNet()
+	embedder = FaceNet()
 
 	videos = test_data["vids_list"]
 	true_labels = test_data["label"]
@@ -263,9 +263,6 @@ if __name__ == "__main__":
 	# test_data = np.load("test_embs.npy")
 	test_label = np.load("test_labels.npy")
 	y_test_onehot = utils.to_categorical(test_label)
-
-	index_0 = np.where(test_label==0)
-	index_1 = np.where(test_label==1)
 
 	for i in videos[:]:
 		cap = cv2.VideoCapture(i)
