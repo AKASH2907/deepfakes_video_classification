@@ -1,5 +1,5 @@
 numpy==1.22.0
-keras==2.3.0
+keras==3.13.2
 opencv-contrib-python
 torch==1.2.0
 torchvision==0.4.0
